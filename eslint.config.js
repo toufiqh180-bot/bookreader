@@ -1,30 +1,29 @@
 // ESLint flat config. Run with `npm run lint`.
-const js = require('@eslint/js');
-const globals = require('globals');
+import js from '@eslint/js';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
 
-module.exports = [
-  { ignores: ['dist/**', 'node_modules/**', 'coverage/**'] },
+export default tseslint.config(
+  { ignores: ['dist/**', 'out/**', 'node_modules/**', 'src/components/ui/**'] },
   js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    // Electron main process, preload and tool configs: CommonJS on Node.
-    files: ['src/main/**/*.js', '*.config.js'],
-    languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
-  },
-  {
-    // Renderer: ES modules in the browser, talking to the system via window.api.
-    files: ['src/renderer/**/*.js'],
-    languageOptions: { sourceType: 'module', globals: { ...globals.browser } },
-  },
-  {
-    files: ['tests/**/*.js'],
-    languageOptions: { sourceType: 'module', globals: { ...globals.node } },
-  },
-  {
+    files: ['src/**/*.{ts,tsx}', 'tests/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser } },
+    plugins: { 'react-hooks': reactHooks },
     rules: {
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrors: 'none' }],
-      'prefer-const': 'error',
+      ...reactHooks.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/consistent-type-imports': 'error',
       eqeqeq: ['error', 'smart'],
-      'no-var': 'error',
     },
   },
-];
+  {
+    // Electron main process, preload and tooling: CommonJS / Node.
+    files: ['electron/**/*.cjs', '*.config.cjs', 'scripts/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node }, sourceType: 'commonjs' },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  { files: ['scripts/**/*.mjs'], languageOptions: { sourceType: 'module' } },
+);
