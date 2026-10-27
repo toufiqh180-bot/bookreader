@@ -104,7 +104,7 @@ export function LibraryView() {
             <DialogTitle>Remove “{removing && fileBaseName(removing.fileName)}”?</DialogTitle>
             <DialogDescription>
               Its highlights, notes and bookmarks will be deleted from this device.
-              {app.platform.kind === 'electron' ? ' The PDF file itself is not touched.' : ''}
+              {app.platform.kind === 'desktop' ? ' The PDF file itself is not touched.' : ''}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

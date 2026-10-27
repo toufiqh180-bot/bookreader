@@ -66,8 +66,7 @@
 }
 
 /* Two-page spread: a soft gutter shadow along the spine. */
-.pane[data-mode='two-page'] .sheet .page + .page::before,
-.pane[data-mode='two-page'] .sheet .turn-hole + .page::before {
+.pane[data-mode='two-page'] .sheet .page + .page::before {
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
@@ -82,10 +81,6 @@
 .sheet.turning {
   z-index: 2;
   box-shadow: none;
-}
-
-.turn-hole {
-  flex: none;
 }
 
 .turn-leaf {

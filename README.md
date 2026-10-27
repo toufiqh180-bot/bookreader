@@ -29,32 +29,14 @@ Your PDFs are never modified, and nothing is uploaded anywhere: notes live on yo
 
 ## Download
 
-Installers are attached to each [GitHub release](https://github.com/toufiqh180-bot/bookreader/releases):
+Get the latest version from the [Releases page](https://github.com/toufiqh180-bot/bookreader/releases).
 
-| Platform                     | File                                                              | Notes                                                                                                                              |
-| ---------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| macOS                        | `BookReader-x.y.z-arm64.dmg` (Apple Silicon), `…-x64.dmg` (Intel) | Open the DMG and drag BookReader to Applications. The app isn't notarised yet: the first time, right-click it and choose **Open**. |
-| Windows                      | `BookReader-Setup-x.y.z.exe`                                      | Installs to the Start menu with a desktop shortcut.                                                                                |
-| Linux                        | `.AppImage` or `.deb`                                             |                                                                                                                                    |
-| Phone / tablet / any browser | the web app                                                       | Open it in Safari or Chrome, then use **Share → Add to Home Screen** (iOS) or **Install app** (Android/Chrome).                    |
-
-## Keyboard shortcuts
-
-| Action                     | Windows / Linux                        | macOS        |
-| -------------------------- | -------------------------------------- | ------------ |
-| Next / previous page       | Space / Shift+Space, PageDown / PageUp | same         |
-| Back / forward (history)   | Alt+← / Alt+→                          | ⌘[ / ⌘]      |
-| Toggle side panel          | Ctrl+B                                 | ⌘B           |
-| Zoom in / out / fit page   | Ctrl+= / Ctrl+- / Ctrl+0               | ⌘= / ⌘- / ⌘0 |
-| Continuous ⇄ page mode     | Ctrl+M                                 | ⌘M           |
-| Reflow view                | Ctrl+R                                 | ⌘R           |
-| Highlight selection        | H                                      | H            |
-| Sticky note on selection   | N                                      | N            |
-| Cycle light / sepia / dark | T                                      | T            |
-| Find                       | Ctrl+F                                 | ⌘F           |
-| Bookmark page              | Ctrl+D                                 | ⌘D           |
-
-Press **Ctrl/⌘ + /** in the app for the full list.
+- **macOS** (Apple silicon and Intel): open `BookReader.dmg` and drag **BookReader** onto **Applications**. Or download
+  `BookReader-<version>-macos.zip`, unzip it and move `BookReader.app` into Applications. The first time, right-click the app
+  and choose **Open**, because the app isn't yet signed by Apple. If macOS still refuses, run
+  `xattr -dr com.apple.quarantine /Applications/BookReader.app` in Terminal once.
+- **Windows**: run `BookReader_<version>_x64-setup.exe`. SmartScreen may warn that the publisher is unknown; choose **More info → Run anyway**.
+- **Linux**: make the `.AppImage` executable (`chmod +x`) and run it, or install the `.deb` package.
 
 ## Development
 
@@ -64,20 +46,23 @@ Requires [Node.js](https://nodejs.org/) 22 or newer.
 git clone https://github.com/toufiqh180-bot/bookreader.git
 cd bookreader
 npm install
-npm run dev          # desktop app with hot reload
+npm run dev          # desktop app with hot reload (needs Rust, see below)
 npm run dev:web      # web version at http://localhost:5173
 npm run check        # typecheck + lint + unit tests
-npm run dist         # build installers for this OS into dist/
+npm run dist         # build the installers for this OS into src-tauri/target/release/bundle/
 ```
 
-| Script                                         | What it does                                                                        |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `npm run dev`                                  | Vite dev server + Electron window, with hot reload                                  |
-| `npm run dev:web`                              | Web version only                                                                    |
-| `npm run build`                                | Production build of the UI into `out/renderer` (the web app, also used by Electron) |
-| `npm start`                                    | Build, then run the desktop app                                                     |
-| `npm test`                                     | Unit tests (`node:test`, no browser needed)                                         |
-| `npm run dist:mac` / `dist:win` / `dist:linux` | Desktop installers                                                                  |
+The desktop app is built with [Tauri](https://tauri.app/). Building it needs [Rust](https://rustup.rs/) and the
+[Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS. The web version needs only Node.js.
+
+| Script            | What it does                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| `npm run dev`     | Desktop app window with hot reload                                                         |
+| `npm run dev:web` | Web version only                                                                           |
+| `npm run build`   | Production build of the UI into `out/renderer` (the web app, also used by the desktop app) |
+| `npm run dist`    | Desktop installers for the current OS                                                      |
+| `npm run icons`   | Regenerate every icon and PNG from the SVG artwork in `build/`                             |
+| `npm test`        | Unit tests (`node:test`, no browser needed)                                                |
 
 ## How the code is organised
 

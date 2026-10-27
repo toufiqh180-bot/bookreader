@@ -1,5 +1,5 @@
 // Builds the renderer (the whole UI) for both targets:
-//   - the Electron desktop app loads it from out/renderer
+//   - the desktop app (Tauri) loads it from out/renderer
 //   - the web/PWA build serves the same files from any static host
 import path from 'node:path';
 import { defineConfig } from 'vite';
@@ -11,7 +11,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 const modules = (p: string) => path.join('node_modules', p).replaceAll('\\', '/');
 
 export default defineConfig({
-  base: './', // relative URLs so the build works from app:// and from any web path
+  base: './', // relative URLs so the build works inside the desktop shell and from any web path
   build: { outDir: 'out/renderer', emptyOutDir: true, target: 'es2022' },
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   plugins: [
@@ -31,7 +31,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      // The service worker is for the web build only; Electron ignores it.
+      // The service worker is for the web build only; the desktop app ignores it.
       injectRegister: null,
       manifest: {
         name: 'BookReader',

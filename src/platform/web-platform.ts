@@ -31,7 +31,7 @@ interface LaunchQueueWindow {
 }
 
 export class WebPlatform implements Platform {
-  readonly kind = 'web' as const;
+  readonly kind: 'web' | 'desktop' = 'web';
   readonly hasAppMenu = false;
   readonly isMac = /Mac|iPhone|iPad/.test(navigator.userAgent);
   readonly #store: UseStore = createStore('bookreader', 'library');
