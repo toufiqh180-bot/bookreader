@@ -74,9 +74,33 @@ export function cropFromSamples(samples) {
 /** @param {InkBox[]} boxes */
 function combine(boxes) {
   if (!boxes.length) return null;
-  const x0 = Math.max(0, percentile(boxes.map((b) => b.x0), EDGE_PERCENTILE) - PADDING);
-  const y0 = Math.max(0, percentile(boxes.map((b) => b.y0), EDGE_PERCENTILE) - PADDING);
-  const x1 = Math.min(1, percentile(boxes.map((b) => b.x1), 1 - EDGE_PERCENTILE) + PADDING);
-  const y1 = Math.min(1, percentile(boxes.map((b) => b.y1), 1 - EDGE_PERCENTILE) + PADDING);
+  const x0 = Math.max(
+    0,
+    percentile(
+      boxes.map((b) => b.x0),
+      EDGE_PERCENTILE,
+    ) - PADDING,
+  );
+  const y0 = Math.max(
+    0,
+    percentile(
+      boxes.map((b) => b.y0),
+      EDGE_PERCENTILE,
+    ) - PADDING,
+  );
+  const x1 = Math.min(
+    1,
+    percentile(
+      boxes.map((b) => b.x1),
+      1 - EDGE_PERCENTILE,
+    ) + PADDING,
+  );
+  const y1 = Math.min(
+    1,
+    percentile(
+      boxes.map((b) => b.y1),
+      1 - EDGE_PERCENTILE,
+    ) + PADDING,
+  );
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }

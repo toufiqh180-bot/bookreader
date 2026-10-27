@@ -71,7 +71,10 @@ export function paragraphsFromLines(lines, pageHeight) {
   const bodySize = median(body.map((l) => l.size));
   const leftEdge = median(body.map((l) => l.x));
   const lineWidth = median(body.map((l) => l.right - l.x));
-  const gaps = body.slice(1).map((l, i) => Math.abs(body[i].y - l.y)).filter((g) => g > 0);
+  const gaps = body
+    .slice(1)
+    .map((l, i) => Math.abs(body[i].y - l.y))
+    .filter((g) => g > 0);
   const lineGap = median(gaps) || bodySize * 1.2;
 
   const paragraphs = [];

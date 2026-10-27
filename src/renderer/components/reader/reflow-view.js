@@ -85,7 +85,12 @@ export class ReflowView {
     const generation = this.generation;
     this.sections = [];
     for (let page = 1; page <= this.book.numPages; page++) {
-      const marker = el('button', { class: 'reflow-marker', text: `Page ${this.book.pageLabel(page)}`, title: 'Show this page in the PDF', onclick: () => this.onShowPage(page) });
+      const marker = el('button', {
+        class: 'reflow-marker',
+        text: `Page ${this.book.pageLabel(page)}`,
+        title: 'Show this page in the PDF',
+        onclick: () => this.onShowPage(page),
+      });
       this.sections.push(el('section', { class: 'reflow-page', dataset: { page } }, [marker]));
     }
     this.article.replaceChildren(...this.sections);

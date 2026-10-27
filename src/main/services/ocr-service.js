@@ -3,7 +3,7 @@
 // main process (worker thread) so the reader UI stays responsive.
 const path = require('path');
 
-// Packaged builds unpack these modules from app.asar (see package.json build.asarUnpack)
+// Packaged builds unpack these modules from app.asar (electron-builder.config.js → asarUnpack)
 // because worker threads and wasm cannot be loaded from inside an asar archive.
 const unpacked = (p) => p.replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`);
 

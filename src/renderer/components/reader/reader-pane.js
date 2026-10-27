@@ -73,10 +73,7 @@ export class ReaderPane extends Emitter {
     this.el.addEventListener('pointerdown', () => services.onActivate(this), true);
     this.resizeObserver = new ResizeObserver(() => this.#onResize());
     this.resizeObserver.observe(this.el);
-    this.unsubscribe = [
-      book.annotations.on('change', (page) => this.redrawOverlays(page)),
-      book.on('ocr', (page) => this.#onOcr(page)),
-    ];
+    this.unsubscribe = [book.annotations.on('change', (page) => this.redrawOverlays(page)), book.on('ocr', (page) => this.#onOcr(page))];
   }
 
   // ---- PageHost (see page-view.js) -----------------------------------------

@@ -59,12 +59,17 @@ function addTextAnnotation(doc, page, x, y, contents, color) {
   else page.node.set(PDFName.of('Annots'), doc.context.obj([ref]));
 }
 
-async function flattenPdf(bytes, annotations, ocr) {
+/**
+ * @param {Buffer} bytes  original PDF
+ * @param {{ annotations?: object[], ocr?: Record<string, {lines: object[]}> }} content
+ * @returns {Promise<Uint8Array>}
+ */
+async function buildAnnotatedPdf(bytes, { annotations = [], ocr = {} } = {}) {
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const pages = doc.getPages();
   const font = await doc.embedFont(StandardFonts.Helvetica);
 
-  for (const a of annotations || []) {
+  for (const a of annotations) {
     const page = pages[a.page - 1];
     if (!page) continue;
     const color = hexToRgb(a.color);
@@ -104,7 +109,7 @@ async function flattenPdf(bytes, annotations, ocr) {
   }
 
   // Invisible OCR text layer (text render opacity 0 stays selectable/searchable).
-  for (const [pageNum, entry] of Object.entries(ocr || {})) {
+  for (const [pageNum, entry] of Object.entries(ocr)) {
     const page = pages[Number(pageNum) - 1];
     if (!page || !entry || !entry.lines) continue;
     for (const line of entry.lines) {
@@ -127,4 +132,4 @@ async function flattenPdf(bytes, annotations, ocr) {
   return doc.save();
 }
 
-module.exports = { flattenPdf };
+module.exports = { buildAnnotatedPdf };
