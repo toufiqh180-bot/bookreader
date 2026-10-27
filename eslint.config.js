@@ -21,7 +21,7 @@ export default tseslint.config(
   },
   {
     // Electron main process, preload and tooling: CommonJS / Node.
-    files: ['electron/**/*.cjs', '*.config.cjs', 'scripts/**/*.mjs'],
+    files: ['electron/**/*.cjs', '*.config.cjs', 'scripts/**/*.{cjs,mjs}'],
     languageOptions: { globals: { ...globals.node }, sourceType: 'commonjs' },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },

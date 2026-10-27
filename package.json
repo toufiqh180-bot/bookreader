@@ -20,7 +20,8 @@
     "dist": "vite build && electron-builder --config electron-builder.config.cjs",
     "dist:mac": "vite build && electron-builder --config electron-builder.config.cjs --mac",
     "dist:win": "vite build && electron-builder --config electron-builder.config.cjs --win",
-    "dist:linux": "vite build && electron-builder --config electron-builder.config.cjs --linux"
+    "dist:linux": "vite build && electron-builder --config electron-builder.config.cjs --linux",
+    "icons": "node scripts/generate-icons.cjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    Full-bleed variant of icon.svg for Android / PWA "maskable" icons and
+    iOS home-screen icons: the platform applies its own mask, so the tile
+    fills the canvas and the artwork sits inside the central safe zone.
+  -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3D8BFF" />
+      <stop offset="1" stop-color="#1748C9" />
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="leftPage" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#E4ECFF" />
+    </linearGradient>
+    <linearGradient id="rightPage" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#E9EFFF" />
+    </linearGradient>
+    <linearGradient id="turning" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C9D8FF" />
+      <stop offset="0.55" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#F3F6FF" />
+    </linearGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB547" />
+      <stop offset="1" stop-color="#FF7A1A" />
+    </linearGradient>
+    <filter id="drop" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0A1F5C" flood-opacity="0.35" />
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#06164A" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Tile -->
+  <rect width="1024" height="1024" fill="url(#tile)" />
+  <rect width="1024" height="1024" fill="url(#sheen)" />
+  <g transform="translate(512 512) scale(0.86) translate(-512 -520)">
+
+  <!-- Open book -->
+  <g filter="url(#soft)">
+    <!-- Left page -->
+    <path d="M512 336 C 438 284 330 270 232 300 L 232 708 C 330 680 438 694 512 744 Z" fill="url(#leftPage)" />
+    <!-- Right page -->
+    <path d="M512 336 C 586 284 694 270 792 300 L 792 708 C 694 680 586 694 512 744 Z" fill="url(#rightPage)" />
+    <!-- Page mid-turn, lifting from the right -->
+    <path d="M512 336 C 560 300 628 286 690 290 C 664 420 652 560 666 688 C 604 686 552 708 512 744 Z" fill="url(#turning)" />
+  </g>
+
+  <!-- Spine -->
+  <path d="M512 336 L 512 744" stroke="#9DB6F5" stroke-width="6" stroke-linecap="round" />
+
+  <!-- Text lines on the left page -->
+  <g stroke="#9CB3EE" stroke-width="16" stroke-linecap="round" fill="none">
+    <path d="M282 404 C 340 392 400 396 456 414" />
+    <path d="M282 466 C 340 454 400 458 456 476" />
+    <path d="M282 528 C 340 516 400 520 456 538" />
+    <path d="M282 590 C 330 580 372 582 410 592" />
+  </g>
+  <!-- A highlighted line -->
+  <path d="M276 528 C 340 512 404 516 462 538" stroke="#FFD84D" stroke-opacity="0.65" stroke-width="34" stroke-linecap="round" fill="none" />
+  <path d="M282 528 C 340 516 400 520 456 538" stroke="#9CB3EE" stroke-width="16" stroke-linecap="round" fill="none" />
+
+  <!-- Bookmark ribbon on the right page -->
+  <path d="M716 300 L 764 296 L 764 452 L 740 428 L 716 452 Z" fill="url(#ribbon)" />
+  </g>
+</svg>

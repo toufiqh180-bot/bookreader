@@ -7,6 +7,7 @@ import { BookOpen, FileText, FolderOpen, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/cn';
+import { Wordmark } from '../common/Logo.tsx';
 import { useApp, useAppState, useCommand } from '../../hooks/use-app.ts';
 import { fileBaseName } from '../../lib/util.ts';
 import type { LibraryEntry } from '../../platform/platform.ts';
@@ -36,6 +37,7 @@ export function LibraryView() {
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-24 sm:px-10">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
+            <Wordmark className="mb-6 text-lg" />
             <h1 className="text-2xl font-semibold tracking-tight">Library</h1>
             <p className="mt-1 text-muted-foreground">
               {app.platform.kind === 'web'
@@ -55,7 +57,7 @@ export function LibraryView() {
               onClick={() => run('file.open')}
               className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed px-16 py-12 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
             >
-              <BookOpen className="size-10" />
+              <BookOpen className="size-10" aria-hidden />
               <span className="mt-2 text-lg font-medium text-foreground">Open a PDF to start reading</span>
               <span>or drop one anywhere on this window</span>
             </button>

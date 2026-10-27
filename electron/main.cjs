@@ -25,6 +25,12 @@ const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const DEEP_LINK_SCHEME = 'bookreader';
 const isMac = process.platform === 'darwin';
 
+// The app's identity. Set before anything else so the menu bar, Dock and
+// About window say "BookReader" even when running from source.
+const APP_NAME = 'BookReader';
+const ICON_PATH = path.join(__dirname, '..', 'build', 'icon.png');
+app.setName(APP_NAME);
+
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 
 /** @type {BrowserWindow|null} */
@@ -97,7 +103,9 @@ function createWindow() {
     height: 900,
     minWidth: 720,
     minHeight: 480,
-    title: 'BookReader',
+    title: APP_NAME,
+    // Window / taskbar icon on Windows and Linux (macOS uses the app bundle's icon).
+    icon: isMac ? undefined : ICON_PATH,
     backgroundColor: '#1e1f22',
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 16, y: 17 }, // centred in the 48px top bar
@@ -149,7 +157,26 @@ ipcMain.on('renderer:ready', (event) => {
 
 // ---- Lifecycle ----------------------------------------------------------------
 
+/**
+ * Packaged builds get their icon and name from the app bundle. When running
+ * from source the process is the stock Electron binary, so set the Dock icon
+ * and About window explicitly — otherwise macOS shows Electron's logo.
+ */
+function applyBranding() {
+  const version = app.getVersion();
+  app.setAboutPanelOptions({
+    applicationName: APP_NAME,
+    applicationVersion: version,
+    version: '',
+    copyright: 'Free and open source · MIT License',
+    website: 'https://github.com/toufiqh180-bot/bookreader',
+    iconPath: ICON_PATH,
+  });
+  if (isMac && !app.isPackaged && fs.existsSync(ICON_PATH)) app.dock.setIcon(ICON_PATH);
+}
+
 app.whenReady().then(() => {
+  applyBranding();
   serveAppProtocol();
   libraryStore.init(app.getPath('userData'));
   registerIpc();

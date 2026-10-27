@@ -36,6 +36,15 @@ CI runs the same checks, plus a production build, on every pull request.
 - **Comment the why.** Start each file with a short comment saying what it's responsible for.
 - **No new runtime dependencies** without discussion; the app should stay small and work offline.
 
+## Logo and icons
+
+The artwork lives in `build/` as SVG: `icon.svg` (app icon), `icon-maskable.svg` (phone home screens) and
+`dmg-background.svg` (macOS installer window). After editing one, regenerate every PNG size with:
+
+```bash
+npm run icons
+```
+
 ## Reporting bugs
 
 Please include your OS (or browser and device), the app version, and if possible a PDF that reproduces the
