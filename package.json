@@ -1,0 +1,25 @@
+{
+  "name": "bookreader",
+  "productName": "BookReader",
+  "version": "0.1.0",
+  "description": "A free, open-source PDF reader designed for reading books: reflow, night modes, margin cropping, annotations, OCR and more.",
+  "main": "src/main/main.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "electron": "^44.9.3",
+    "electron-builder": "^26.0.12"
+  }
+}
