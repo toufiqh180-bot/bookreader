@@ -3,6 +3,8 @@
  * these keep view code declarative and short.
  */
 
+export const $ = (selector, root = document) => root.querySelector(selector);
+
 /**
  * Creates an element.
  *   el('button', { class: 'btn', title: 'Save', onclick: save }, ['Save'])

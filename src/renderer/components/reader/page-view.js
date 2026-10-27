@@ -172,11 +172,13 @@ export class PageView {
     const { width: pageW, height: pageH } = this.baseViewport;
     const fragment = document.createDocumentFragment();
     for (const line of this.book.ocr[this.pageNumber].lines) {
-      line.words.forEach((word, i) => {
-        const [x1, y1, x2, y2] = this.baseViewport.convertToViewportRectangle([word.x1, word.y1, word.x2, word.y2]);
+      for (const word of line.words) {
+        const [x1, y1, x2, y2] = this.#toViewportRect([word.x1, word.y1, word.x2, word.y2]);
         const boxW = Math.abs(x2 - x1);
         const boxH = Math.abs(y2 - y1);
-        const text = i < line.words.length - 1 ? `${word.t} ` : word.t;
+        // A trailing space (not a <br>) separates words and lines when copying;
+        // absolutely positioned <br>s would show selection blips at the page corner.
+        const text = `${word.t} `;
         measure.font = `${boxH}px sans-serif`;
         const naturalW = measure.measureText(text).width || boxW;
         const span = el('span', { text });
@@ -188,8 +190,7 @@ export class PageView {
           `transform:scaleX(${(boxW / naturalW).toFixed(4)})`,
         ].join(';');
         fragment.append(span);
-      });
-      fragment.append(el('br'));
+      }
     }
     this.textLayer.append(fragment);
   }
@@ -201,12 +202,17 @@ export class PageView {
     for (const a of annotations) {
       const url = a.url || a.unsafeUrl;
       if (a.subtype !== 'Link' || (!url && !a.dest)) continue;
-      const [x1, y1, x2, y2] = this.baseViewport.convertToViewportRectangle(a.rect);
+      const [x1, y1, x2, y2] = this.#toViewportRect(a.rect);
       const pct = (v, total) => `${(v / total) * 100}%`;
       const link = el('a', {
         class: 'pdf-link',
         title: url || 'Go to linked location',
-        style: { left: pct(Math.min(x1, x2), pageW), top: pct(Math.min(y1, y2), pageH), width: pct(Math.abs(x2 - x1), pageW), height: pct(Math.abs(y2 - y1), pageH) },
+        style: {
+          left: pct(Math.min(x1, x2), pageW),
+          top: pct(Math.min(y1, y2), pageH),
+          width: pct(Math.abs(x2 - x1), pageW),
+          height: pct(Math.abs(y2 - y1), pageH),
+        },
         onclick: (e) => {
           e.preventDefault();
           if (!this.host.linksEnabled()) return;
@@ -219,6 +225,14 @@ export class PageView {
   }
 
   // ---- Coordinates ---------------------------------------------------------
+
+  /** PDF rect [x1, y1, x2, y2] → scale-1 viewport rect [left, top, right, bottom]. */
+  #toViewportRect([x1, y1, x2, y2]) {
+    const [ax, ay] = this.baseViewport.convertToViewportPoint(x1, y1);
+    const [bx, by] = this.baseViewport.convertToViewportPoint(x2, y2);
+    return [Math.min(ax, bx), Math.min(ay, by), Math.max(ax, bx), Math.max(ay, by)];
+  }
+
   // Before the first render there is no viewport yet; assume an unrotated page.
   #viewport() {
     const h = this.book.pageSize(this.pageNumber).h;

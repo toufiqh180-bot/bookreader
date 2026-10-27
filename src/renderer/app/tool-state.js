@@ -20,7 +20,15 @@ export const TOOLS = {
 
 export const PALETTE = ['#FFEB3B', '#8BE07A', '#64B5F6', '#F48FB1', '#FFB74D', '#B39DDB', '#FF5722', '#212121'];
 
-const DEFAULT_COLORS = { highlight: '#FFEB3B', underline: '#64B5F6', squiggly: '#FF5722', strikeout: '#FF5722', note: '#FFEB3B', pen: '#FF5722', marker: '#FFEB3B' };
+const DEFAULT_COLORS = {
+  highlight: '#FFEB3B',
+  underline: '#64B5F6',
+  squiggly: '#FF5722',
+  strikeout: '#FF5722',
+  note: '#FFEB3B',
+  pen: '#FF5722',
+  marker: '#FFEB3B',
+};
 const DEFAULT_WIDTHS = { pen: 2, marker: 12 };
 
 export class ToolState extends Emitter {

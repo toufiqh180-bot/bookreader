@@ -1,68 +1,93 @@
 'use strict';
-const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell, clipboard } = require('electron');
+/**
+ * Electron main process entry point.
+ *
+ *   - single-instance lock: opening a PDF or deep link while the app is
+ *     running routes it to the existing window
+ *   - OS integration: file associations (open-file), the bookreader://
+ *     protocol (open-url / argv)
+ *   - serves the renderer from a privileged app:// scheme so ES modules and
+ *     the pdf.js worker load the same way in development and inside app.asar
+ */
+const { app, BrowserWindow, ipcMain, protocol, net, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const fsp = require('fs/promises');
-const crypto = require('crypto');
 const { pathToFileURL } = require('url');
-const library = require('./library');
+const { buildMenu } = require('./menu');
+const { registerIpc } = require('./ipc');
+const libraryStore = require('./services/library-store');
 
 const APP_ROOT = path.join(__dirname, '..', '..');
-const PROTOCOL = 'bookreader';
+const ENTRY_URL = 'app://bundle/src/renderer/index.html';
+const DEEP_LINK_SCHEME = 'bookreader';
 const isMac = process.platform === 'darwin';
 
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } },
-]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 
+/** @type {BrowserWindow|null} */
 let mainWindow = null;
-// Files / links requested before the window was ready.
-const pendingOpens = [];
 
-function queueOpen(item) {
+// ---- Open requests (files and deep links) -----------------------------------
+// Requests can arrive before the window exists (e.g. double-clicking a PDF
+// launches the app), so they are queued until the renderer reports that it
+// has finished starting up ('renderer:ready').
+
+/** @typedef {{ type: 'file', path: string } | { type: 'link', url: string }} OpenRequest */
+/** @type {OpenRequest[]} */
+const pendingRequests = [];
+let rendererReady = false;
+
+/** @param {OpenRequest} request */
+function deliverOpenRequest(request) {
   if (!mainWindow && app.isReady()) createWindow();
-  if (mainWindow && !mainWindow.webContents.isLoading()) {
-    mainWindow.webContents.send('open-request', item);
+  if (mainWindow && rendererReady) {
+    mainWindow.webContents.send('open-request', request);
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
   } else {
-    pendingOpens.push(item);
+    pendingRequests.push(request);
   }
 }
 
-function handleArgv(argv) {
+function handleCommandLine(argv) {
+  // argv = [electron, (script in dev), ...args]
   for (const arg of argv.slice(app.isPackaged ? 1 : 2)) {
-    if (arg.startsWith(`${PROTOCOL}://`)) {
-      queueOpen({ type: 'link', url: arg });
+    if (arg.startsWith(`${DEEP_LINK_SCHEME}://`)) {
+      deliverOpenRequest({ type: 'link', url: arg });
     } else if (arg.toLowerCase().endsWith('.pdf') && fs.existsSync(arg)) {
-      queueOpen({ type: 'file', path: path.resolve(arg) });
+      deliverOpenRequest({ type: 'file', path: path.resolve(arg) });
     }
   }
 }
 
-// ---- Single instance + OS integration -------------------------------------
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', (_e, argv) => handleArgv(argv));
+  app.on('second-instance', (_event, argv) => handleCommandLine(argv));
 }
 
 if (process.defaultApp && process.argv.length >= 2) {
-  app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
+  app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME, process.execPath, [path.resolve(process.argv[1])]);
 } else {
-  app.setAsDefaultProtocolClient(PROTOCOL);
+  app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
 }
 
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
-  queueOpen({ type: 'file', path: filePath });
-});
-app.on('open-url', (event, url) => {
-  event.preventDefault();
-  queueOpen({ type: 'link', url });
+  deliverOpenRequest({ type: 'file', path: filePath });
 });
 
-// ---- Window ----------------------------------------------------------------
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  deliverOpenRequest({ type: 'link', url });
+});
+
+// ---- Window -------------------------------------------------------------------
+
+function openExternally(url) {
+  if (/^(https?|mailto):/.test(url)) shell.openExternal(url);
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1360,
@@ -72,7 +97,7 @@ function createWindow() {
     title: 'BookReader',
     backgroundColor: '#1e1f22',
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
-    trafficLightPosition: { x: 14, y: 14 },
+    trafficLightPosition: { x: 14, y: 13 },
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -81,198 +106,53 @@ function createWindow() {
       spellcheck: false,
     },
   });
-  mainWindow.loadURL('app://bundle/src/renderer/index.html');
-  mainWindow.webContents.on('did-finish-load', () => {
-    while (pendingOpens.length) mainWindow.webContents.send('open-request', pendingOpens.shift());
-  });
-  // External links in PDFs open in the system browser, never inside the app.
+  rendererReady = false;
+  mainWindow.loadURL(ENTRY_URL);
+  mainWindow.webContents.on('did-start-loading', () => (rendererReady = false));
+  // Links inside PDFs open in the system browser, never inside the app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:|^mailto:/.test(url)) shell.openExternal(url);
+    openExternally(url);
     return { action: 'deny' };
   });
-  mainWindow.webContents.on('will-navigate', (e, url) => {
-    if (!url.startsWith('app://')) {
-      e.preventDefault();
-      if (/^https?:|^mailto:/.test(url)) shell.openExternal(url);
-    }
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url.startsWith('app://')) return;
+    event.preventDefault();
+    openExternally(url);
   });
   mainWindow.on('closed', () => (mainWindow = null));
 }
 
-// ---- Menu ------------------------------------------------------------------
-function send(cmd, arg) {
-  const win = BrowserWindow.getFocusedWindow() || mainWindow;
-  if (win) win.webContents.send('command', cmd, arg);
+/** Sends a menu command to the focused window. */
+function sendCommand(command, arg) {
+  const target = BrowserWindow.getFocusedWindow() ?? mainWindow;
+  target?.webContents.send('command', command, arg);
 }
 
-function buildMenu() {
-  const item = (label, accelerator, cmd, arg) => ({ label, accelerator, click: () => send(cmd, arg) });
-  const template = [
-    ...(isMac ? [{ role: 'appMenu' }] : []),
-    {
-      label: 'File',
-      submenu: [
-        item('Open…', 'CmdOrCtrl+O', 'open'),
-        item('Library', 'CmdOrCtrl+L', 'library'),
-        { type: 'separator' },
-        item('Close Tab', 'CmdOrCtrl+W', 'close-tab'),
-        { type: 'separator' },
-        {
-          label: 'Export Annotations',
-          submenu: [
-            item('As Markdown…', null, 'export', 'md'),
-            item('As JSON…', null, 'export', 'json'),
-            item('As Plain Text…', null, 'export', 'txt'),
-          ],
-        },
-        item('Save Flattened PDF (annotations burned in)…', 'CmdOrCtrl+Shift+S', 'flatten'),
-        item('Save Searchable PDF (with OCR text)…', null, 'save-ocr-pdf'),
-        { type: 'separator' },
-        item('Copy Link to This Spot', 'CmdOrCtrl+Shift+C', 'copy-link'),
-        ...(isMac ? [] : [{ type: 'separator' }, { role: 'quit' }]),
-      ],
-    },
-    {
-      label: 'Edit',
-      submenu: [
-        item('Undo', 'CmdOrCtrl+Z', 'undo'),
-        item('Redo', 'Shift+CmdOrCtrl+Z', 'redo'),
-        { type: 'separator' },
-        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
-        { type: 'separator' },
-        item('Find in Book…', 'CmdOrCtrl+F', 'find'),
-        item('Go to Page…', 'CmdOrCtrl+G', 'goto'),
-      ],
-    },
-    {
-      label: 'View',
-      submenu: [
-        item('Toggle Sidebar', 'CmdOrCtrl+B', 'sidebar'),
-        { type: 'separator' },
-        item('Zoom In', 'CmdOrCtrl+=', 'zoom-in'),
-        item('Zoom Out', 'CmdOrCtrl+-', 'zoom-out'),
-        item('Fit Page', 'CmdOrCtrl+0', 'zoom-fit'),
-        item('Fit Width', 'CmdOrCtrl+9', 'zoom-width'),
-        { type: 'separator' },
-        item('Toggle Continuous Scroll / Page Mode', 'CmdOrCtrl+M', 'toggle-mode'),
-        item('Two-Page Spread', 'CmdOrCtrl+2', 'mode', 'spread'),
-        item('Reflow (Text) View', 'CmdOrCtrl+R', 'reflow'),
-        item('Smart Margin Crop', 'CmdOrCtrl+K', 'crop'),
-        item('Split Screen', 'CmdOrCtrl+\\', 'split'),
-        { type: 'separator' },
-        item('Cycle Theme', null, 'theme-cycle'),
-        item('Auto-Scroll', 'CmdOrCtrl+Shift+A', 'autoscroll'),
-        { type: 'separator' },
-        { role: 'togglefullscreen' },
-        { role: 'toggleDevTools' },
-      ],
-    },
-    {
-      label: 'Go',
-      submenu: [
-        item('Back', isMac ? 'Cmd+[' : 'Alt+Left', 'back'),
-        item('Forward', isMac ? 'Cmd+]' : 'Alt+Right', 'forward'),
-        { type: 'separator' },
-        item('Add Bookmark', 'CmdOrCtrl+D', 'bookmark'),
-      ],
-    },
-    {
-      label: 'Tools',
-      submenu: [
-        item('Recognize Text (OCR) — This Page', null, 'ocr', 'page'),
-        item('Recognize Text (OCR) — Whole Book', null, 'ocr', 'all'),
-      ],
-    },
-    // Note: no Cmd+M minimize — that shortcut toggles reading mode, per spec.
-    { label: 'Window', submenu: [{ role: 'zoom' }, { role: 'close' }] },
-    {
-      role: 'help',
-      submenu: [
-        item('Keyboard Shortcuts', 'CmdOrCtrl+/', 'shortcuts'),
-        { label: 'Project on GitHub', click: () => shell.openExternal('https://github.com/') },
-      ],
-    },
-  ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-}
-
-// ---- IPC -------------------------------------------------------------------
-function registerIpc() {
-  ipcMain.handle('dialog:open', async () => {
-    const r = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'PDF documents', extensions: ['pdf'] }],
-    });
-    return r.canceled ? [] : r.filePaths;
-  });
-
-  ipcMain.handle('file:read', async (_e, filePath) => {
-    const buf = await fsp.readFile(filePath);
-    const hash = crypto.createHash('sha256').update(buf).digest('hex');
-    return { data: new Uint8Array(buf), bookId: `sha256-${hash.slice(0, 24)}`, name: path.basename(filePath), path: filePath };
-  });
-
-  ipcMain.handle('file:exists', (_e, p) => fs.existsSync(p));
-
-  ipcMain.handle('book:load', (_e, bookId) => library.loadBook(bookId));
-  ipcMain.handle('book:save', (_e, bookId, data) => library.saveBook(bookId, data));
-  ipcMain.handle('book:loadExtra', (_e, bookId, kind) => library.loadExtra(bookId, kind));
-  ipcMain.handle('book:saveExtra', (_e, bookId, kind, data) => library.saveExtra(bookId, kind, data));
-  ipcMain.handle('library:list', () => library.list());
-  ipcMain.handle('library:remove', (_e, bookId) => library.remove(bookId));
-  ipcMain.handle('library:setCover', (_e, bookId, dataUrl) => library.setCover(bookId, dataUrl));
-  ipcMain.handle('prefs:load', () => library.loadPrefs());
-  ipcMain.handle('prefs:save', (_e, prefs) => library.savePrefs(prefs));
-
-  ipcMain.handle('export:text', async (_e, { defaultName, content, ext }) => {
-    const filters = { md: 'Markdown', json: 'JSON', txt: 'Text' };
-    const r = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: defaultName,
-      filters: [{ name: filters[ext] || 'File', extensions: [ext] }],
-    });
-    if (r.canceled || !r.filePath) return null;
-    await fsp.writeFile(r.filePath, content, 'utf8');
-    return r.filePath;
-  });
-
-  ipcMain.handle('pdf:flatten', async (_e, { sourcePath, annotations, ocr, defaultName }) => {
-    const r = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: defaultName,
-      filters: [{ name: 'PDF', extensions: ['pdf'] }],
-    });
-    if (r.canceled || !r.filePath) return null;
-    const { flattenPdf } = require('./flatten');
-    const bytes = await flattenPdf(await fsp.readFile(sourcePath), annotations, ocr);
-    await fsp.writeFile(r.filePath, bytes);
-    return r.filePath;
-  });
-
-  ipcMain.handle('ocr:recognize', async (_e, pngBytes) => {
-    const { recognize } = require('./ocr');
-    return recognize(Buffer.from(pngBytes));
-  });
-
-  ipcMain.handle('clipboard:write', (_e, text) => clipboard.writeText(text));
-  ipcMain.handle('shell:reveal', (_e, p) => shell.showItemInFolder(p));
-  ipcMain.handle('app:info', () => ({ platform: process.platform, version: app.getVersion() }));
-  ipcMain.on('window:title', (_e, title) => mainWindow && mainWindow.setTitle(title));
-}
-
-// ---- Lifecycle -------------------------------------------------------------
-app.whenReady().then(() => {
-  // Serve the app (and node_modules assets such as the pdf.js worker) from a
-  // privileged custom scheme so ES modules and workers load cleanly from asar.
+// Serves files under the app root; refuses anything that escapes it.
+function serveAppProtocol() {
   protocol.handle('app', (request) => {
     const { pathname } = new URL(request.url);
     const filePath = path.normalize(path.join(APP_ROOT, decodeURIComponent(pathname)));
-    if (!filePath.startsWith(APP_ROOT)) return new Response('Forbidden', { status: 403 });
+    if (!filePath.startsWith(APP_ROOT + path.sep)) return new Response('Forbidden', { status: 403 });
     return net.fetch(pathToFileURL(filePath).toString());
   });
-  library.init(app.getPath('userData'));
+}
+
+ipcMain.on('renderer:ready', (event) => {
+  if (!mainWindow || event.sender !== mainWindow.webContents) return;
+  rendererReady = true;
+  for (const request of pendingRequests.splice(0)) mainWindow.webContents.send('open-request', request);
+});
+
+// ---- Lifecycle ----------------------------------------------------------------
+
+app.whenReady().then(() => {
+  serveAppProtocol();
+  libraryStore.init(app.getPath('userData'));
   registerIpc();
-  buildMenu();
+  buildMenu(sendCommand);
   createWindow();
-  handleArgv(process.argv);
+  handleCommandLine(process.argv);
   app.on('activate', () => {
     if (!BrowserWindow.getAllWindows().length) createWindow();
   });
