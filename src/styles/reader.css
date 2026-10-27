@@ -1,0 +1,445 @@
+/* The reading surface, rendered by the engine (src/engine) as plain DOM:
+   panes, pages and their layers, page turns, reading themes, annotations,
+   and the reflow view. */
+
+.tab-view,
+.panes {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.pane {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.pane.active {
+  box-shadow: inset 0 2px 0 var(--primary);
+}
+
+.pane-divider {
+  flex: none;
+  width: 1px;
+  background: var(--border);
+}
+
+.scroller {
+  flex: 1;
+  overflow: auto;
+  outline: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---- Layouts ---- */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+}
+
+.stage {
+  display: grid;
+  place-items: center;
+  min-width: 100%;
+  min-height: 100%;
+  width: max-content;
+  perspective: 2400px;
+}
+
+.sheet {
+  grid-area: 1 / 1;
+  position: relative;
+  display: flex;
+  box-shadow: var(--page-shadow);
+  transform-style: preserve-3d;
+}
+
+.sheet .page {
+  box-shadow: none;
+}
+
+/* Two-page spread: a soft gutter shadow along the spine. */
+.pane[data-mode='two-page'] .sheet .page + .page::before,
+.pane[data-mode='two-page'] .sheet .turn-hole + .page::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 32px;
+  background: linear-gradient(to right, rgb(0 0 0 / 0.14), transparent);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* ---- Page turn (engine/layouts/page-turn.ts) ---- */
+
+.sheet.turning {
+  z-index: 2;
+  box-shadow: none;
+}
+
+.turn-hole {
+  flex: none;
+}
+
+.turn-leaf {
+  position: absolute;
+  z-index: 3;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.turn-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  background: #fff;
+  box-shadow: 0 0 24px rgb(0 0 0 / 0.18);
+}
+
+.turn-face > .page {
+  position: absolute;
+  inset: 0;
+}
+
+.turn-back {
+  transform: rotateY(180deg);
+}
+
+/* Paper darkening as the leaf lifts away from the light. */
+.turn-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(to right, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.05) 55%, rgb(255 255 255 / 0.12));
+}
+
+.turn-back .turn-shade {
+  background: linear-gradient(to left, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.05) 55%, rgb(255 255 255 / 0.12));
+}
+
+.turn-paper {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #f4f4f2, #ffffff 40%);
+}
+
+/* ---- Page layers ---- */
+
+.page {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--page-shadow);
+}
+
+.page-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.canvas-wrap,
+.canvas-wrap canvas,
+.tint,
+.link-layer,
+.annot-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.tint {
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.link-layer {
+  pointer-events: none;
+}
+
+.pdf-link {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pdf-link:hover {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+/* pdf.js text layer (subset of pdf_viewer.css): transparent, selectable text. */
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  user-select: text;
+  -webkit-user-select: text;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.textLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+}
+
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.textLayer .markedContent {
+  display: contents;
+}
+
+.textLayer ::selection {
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+  color: transparent;
+}
+
+.textLayer .endOfContent {
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+/* ---- Tools: cursors and which layer receives the pointer ---- */
+
+[data-tool='pen'] .textLayer,
+[data-tool='marker'] .textLayer,
+[data-tool='eraser'] .textLayer,
+[data-tool='note'] .textLayer,
+:is([data-tool='pen'], [data-tool='marker'], [data-tool='eraser'], [data-tool='note']) .pdf-link {
+  pointer-events: none;
+}
+
+:is([data-tool='pen'], [data-tool='marker']) .page {
+  cursor: crosshair;
+  touch-action: none; /* finger/stylus draws instead of scrolling */
+}
+
+[data-tool='note'] .page {
+  cursor: copy;
+}
+
+[data-tool='eraser'] .page {
+  cursor: cell;
+  touch-action: none;
+}
+
+/* ---- Annotations (SVG, PDF user space) ---- */
+
+.annot-layer {
+  overflow: visible;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.annot-hit {
+  fill: transparent;
+  stroke: transparent;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.ink-hit {
+  fill: none;
+  pointer-events: stroke;
+}
+
+.hl {
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+.ink {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ink.marker {
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+}
+
+[data-tool='eraser'] .annot:hover {
+  opacity: 0.35;
+}
+
+.search-hit {
+  fill: rgb(255 170 0 / 0.35);
+}
+
+.search-hit.current {
+  fill: rgb(255 120 0 / 0.6);
+}
+
+.flash rect {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  animation: flash 1.8s ease-out forwards;
+}
+
+@keyframes flash {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---- Reading themes (data-theme on .tab-view; see app/themes.ts) ---- */
+
+[data-theme='sepia'] .tint {
+  background: #f3e2bf;
+}
+
+[data-theme='dark'] .canvas-wrap canvas {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+[data-theme='night'] .canvas-wrap canvas {
+  filter: invert(0.92) hue-rotate(180deg) brightness(0.9);
+}
+
+[data-theme='night'] .tint {
+  background: #ffc98a;
+}
+
+[data-theme='mono'] .canvas-wrap canvas {
+  filter: grayscale(1) contrast(1.4);
+}
+
+[data-theme='custom'] .tint {
+  background: var(--custom-tint);
+}
+
+[data-theme='custom'] .canvas-wrap canvas {
+  filter: brightness(var(--custom-brightness));
+}
+
+/* On dark pages multiply would hide highlights; screen keeps them visible. */
+:is([data-theme='dark'], [data-theme='night']) :is(.hl, .ink.marker) {
+  mix-blend-mode: screen;
+  opacity: 0.35;
+}
+
+:is([data-theme='dark'], [data-theme='night']) :is(.page, .turn-face) {
+  background: #1a1a1a;
+}
+
+:is([data-theme='dark'], [data-theme='night']) .turn-paper {
+  background: linear-gradient(to right, #161616, #222 40%);
+}
+
+/* ---- Reflow view ---- */
+
+.reflow {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.reflow-scroller {
+  flex: 1;
+  overflow-y: auto;
+  outline: none;
+  background: #fbfbf9;
+  color: #1d1d1f;
+}
+
+.reflow-article {
+  margin: 0 auto;
+  padding: 48px 32px 30vh;
+  user-select: text;
+  -webkit-user-select: text;
+  hyphens: auto;
+}
+
+.reflow-article p {
+  margin: 0 0 0.9em;
+}
+
+.reflow-article h3 {
+  margin: 1.6em 0 0.6em;
+  font-size: 1.3em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.reflow-marker {
+  display: block;
+  margin: 1.8em 0 0.8em;
+  color: #9a9aa0;
+  font: 11px var(--font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.reflow-marker:hover {
+  color: var(--primary);
+}
+
+.reflow-empty {
+  color: #9a9aa0;
+  font-style: italic;
+}
+
+[data-theme='sepia'] .reflow-scroller {
+  background: #f4ead5;
+  color: #3b2f1e;
+}
+
+[data-theme='dark'] .reflow-scroller {
+  background: #18181a;
+  color: #d8d8dc;
+}
+
+[data-theme='night'] .reflow-scroller {
+  background: #141210;
+  color: #e6c79c;
+}
+
+[data-theme='mono'] .reflow-scroller {
+  background: #fff;
+  color: #000;
+}
+
+[data-theme='custom'] .reflow-scroller {
+  background: var(--custom-tint);
+  filter: brightness(var(--custom-brightness));
+}
