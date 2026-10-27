@@ -136,12 +136,14 @@ function curl({ from, fromViews, toViews, direction }: TurnRequest): Turn {
   let pivot: 'left' | 'right';
   let fromAngle: number;
   let toAngle: number;
-  let leaveHole = true;
+  // The page being turned is hidden in place rather than moved, so the sheet
+  // keeps its width and the other page never shifts while the leaf turns.
+  let hideOriginal = true;
 
   if (spread) {
     moving = direction > 0 ? fromViews[1] : fromViews[0];
     const box = moving.el.getBoundingClientRect();
-    front = moving.el;
+    front = snapshot(moving, { w: box.width, h: box.height });
     back = snapshot(direction > 0 ? toViews[0] : toViews[1], { w: box.width, h: box.height });
     pivot = direction > 0 ? 'left' : 'right';
     fromAngle = 0;
@@ -149,7 +151,8 @@ function curl({ from, fromViews, toViews, direction }: TurnRequest): Turn {
   } else if (direction > 0) {
     // Single page forward: the page lifts from its outer edge and turns over.
     moving = fromViews[0];
-    front = moving.el;
+    const box = moving.el.getBoundingClientRect();
+    front = snapshot(moving, { w: box.width, h: box.height });
     back = el('div', { class: 'turn-paper' });
     pivot = 'left';
     fromAngle = 0;
@@ -163,7 +166,7 @@ function curl({ from, fromViews, toViews, direction }: TurnRequest): Turn {
     pivot = 'left';
     fromAngle = -180;
     toAngle = 0;
-    leaveHole = false;
+    hideOriginal = false;
   }
 
   const box = moving.el.getBoundingClientRect();
@@ -178,10 +181,8 @@ function curl({ from, fromViews, toViews, direction }: TurnRequest): Turn {
     transformOrigin: `${pivot} center`,
   });
 
-  // A transparent hole where the turning page was reveals the new page beneath.
-  const hole = el('div', { class: 'turn-hole' });
-  Object.assign(hole.style, { width: `${box.width}px`, height: `${box.height}px` });
-  if (leaveHole) moving.el.replaceWith(hole);
+  // The original page stays in layout, invisible, so the new page shows through where it was.
+  if (hideOriginal) moving.el.style.visibility = 'hidden';
   from.classList.add('turning');
   from.append(leaf);
 
@@ -198,7 +199,9 @@ function curl({ from, fromViews, toViews, direction }: TurnRequest): Turn {
   // In single-page forward turns the leaf leaves the page area; fade it as it lands.
   const exit = !spread && direction > 0 ? [leaf.animate([{ opacity: 1, offset: 0.7 }, { opacity: 0 }], timing)] : [];
 
+  // Page views are cached and reused, so the hidden page must be made visible again.
   return track([turn, ...shading, ...exit], CURL_MS, () => {
+    moving.el.style.visibility = '';
     leaf.remove();
     from.remove();
   });

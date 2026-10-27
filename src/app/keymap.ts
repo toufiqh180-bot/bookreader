@@ -1,8 +1,7 @@
 /**
- * Keyboard shortcuts handled in the page. On desktop, shortcuts with
- * modifiers (⌘B, ⌘=, ⌘M, ⌘[ …) are menu accelerators (electron/menu.cjs) so
- * they appear in the menu bar; the web build has no menu bar, so the same
- * shortcuts are bound here when `includeMenuShortcuts` is set.
+ * Keyboard shortcuts handled in the page. Shortcuts with modifiers (⌘B, ⌘=,
+ * ⌘M, ⌘[ …) are bound here when `includeMenuShortcuts` is set, which is
+ * the case on the web and in the desktop app (neither has a native menu bar).
  *
  * Single-letter shortcuts are ignored while typing in a text field.
  */

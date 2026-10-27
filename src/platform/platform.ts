@@ -2,7 +2,7 @@
  * Everything the app needs from its host, behind one interface. Two
  * implementations exist:
  *
- *   ElectronPlatform  desktop: files on disk, native dialogs, app menu
+ *   TauriPlatform     desktop app: native dialogs, PDFs read from disk
  *   WebPlatform       browsers / installed PWA: IndexedDB, file picker, downloads
  *
  * The rest of the app never checks which one it is running on; it only talks
@@ -52,7 +52,7 @@ export interface SaveFileOptions {
 export type OpenRequest = { type: 'source'; source: BookSource } | { type: 'link'; url: string };
 
 export interface Platform {
-  readonly kind: 'electron' | 'web';
+  readonly kind: 'desktop' | 'web';
   /** Native menu bar present (desktop), so the UI can skip duplicating it. */
   readonly hasAppMenu: boolean;
   readonly isMac: boolean;

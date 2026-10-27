@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="760" viewBox="0 0 1080 760">
+  <!-- Background of the macOS installer window (shown at 540×380). The app
+       icon and the Applications shortcut are placed on top by electron-builder
+       (see dmg.contents in electron-builder.config.cjs). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F8FAFF" />
+      <stop offset="1" stop-color="#E8EEFC" />
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="760" fill="url(#bg)" />
+  <g>
+  <text x="540" y="120" text-anchor="middle" font-family="-apple-system, Helvetica Neue, Arial" font-size="44" font-weight="600" fill="#1D1D1F">Install BookReader</text>
+  <text x="540" y="172" text-anchor="middle" font-family="-apple-system, Helvetica Neue, Arial" font-size="28" fill="#6E6E73">Drag the app into your Applications folder</text>
+  <!-- Arrow from the app icon (left) to Applications (right) -->
+  <path d="M410 440 C 480 400 600 400 670 440" stroke="#1473E6" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="2 22" />
+  <path d="M650 412 L 684 448 L 636 458" stroke="#1473E6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+</svg>

@@ -109,11 +109,3 @@
     @apply bg-muted text-muted-foreground rounded border px-1.5 py-px font-sans text-[11px];
   }
 }
-
-/* Electron on macOS: the top bar doubles as the window title bar. */
-.app-region-drag {
-  -webkit-app-region: drag;
-}
-.app-region-drag :is(button, input, [role='tab'], a) {
-  -webkit-app-region: no-drag;
-}

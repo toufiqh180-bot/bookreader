@@ -6,7 +6,7 @@ Thanks for helping make BookReader better.
 
 ```bash
 npm install
-npm run dev        # desktop app with hot reload
+npm run dev        # desktop app with hot reload (needs Rust, see README)
 npm run dev:web    # or the browser version
 ```
 
@@ -30,11 +30,20 @@ CI runs the same checks, plus a production build, on every pull request.
 - **React renders; it doesn't own state.** Read state with `useAppState()`; change it through commands or
   `AppController` methods.
 - **Store geometry in PDF user space**, never in screen pixels.
-- **Host-specific code goes behind `Platform`** and needs both an Electron and a web implementation.
+- **Host-specific code goes behind `Platform`** and needs both a desktop (`TauriPlatform`) and a web (`WebPlatform`) implementation.
 - **Keep files focused**: one component, class or concern per file. Components use `PascalCase.tsx`, other
   modules `kebab-case.ts`. Relative imports include the file extension.
 - **Comment the why.** Start each file with a short comment saying what it's responsible for.
 - **No new runtime dependencies** without discussion; the app should stay small and work offline.
+
+## Logo and icons
+
+The artwork lives in `build/` as SVG: `icon.svg` (app icon), `icon-maskable.svg` (phone home screens) and
+`dmg-background.svg` (macOS installer window). After editing one, regenerate every PNG size with:
+
+```bash
+npm run icons
+```
 
 ## Reporting bugs
 

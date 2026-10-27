@@ -3,7 +3,7 @@
  * the overflow menu on the right. On the desktop app it doubles as the window
  * title bar (draggable, with room for the macOS traffic lights).
  */
-import { Bookmark, ChevronDown, Eye, FileText, Home, Link2, MoreHorizontal, PanelRight, Plus, ScanText, Search, Share, X } from 'lucide-react';
+import { Bookmark, ChevronDown, Eye, FileText, Link2, MoreHorizontal, PanelRight, Plus, ScanText, Search, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/cn';
 import { IconButton } from '../common/IconButton.tsx';
+import { Logo } from '../common/Logo.tsx';
 import { ViewMenu } from './ViewMenu.tsx';
 import { useApp, useAppState, useCommand } from '../../hooks/use-app.ts';
 import { useCompactLayout } from '../../hooks/use-media-query.ts';
@@ -24,15 +25,15 @@ export function TopBar() {
   const state = useAppState();
   const run = useCommand();
   const compact = useCompactLayout();
-  const isDesktopMac = app.platform.kind === 'electron' && app.platform.isMac;
+  const isDesktopMac = app.platform.kind === 'desktop' && app.platform.isMac;
   const hasBook = Boolean(state.book);
 
   return (
-    <header className={cn('app-region-drag flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2', isDesktopMac && 'pl-[84px]')}>
+    <header data-tauri-drag-region className={cn('flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2', isDesktopMac && 'pl-[84px]')}>
       <nav className="flex min-w-0 flex-1 items-center gap-1" role="tablist" aria-label="Open books">
-        <TabButton active={!hasBook} onClick={() => run('file.library')} label="Home">
-          <Home className="size-4" />
-          {!compact && <span>Home</span>}
+        <TabButton active={!hasBook} onClick={() => run('file.library')} label="Library">
+          <Logo className="size-5" />
+          {!compact && <span>Library</span>}
         </TabButton>
         <div className="flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none]">
           {state.tabs.map((tab) => (

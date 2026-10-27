@@ -20,3 +20,27 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
+
+  # The desktop shell (src-tauri/) must keep compiling on every platform.
+  rust:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Linux system libraries
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      # tauri-build expects the bundled UI folder to exist; the web build fills it.
+      - run: mkdir -p ../out/renderer
+      - run: cargo check --locked

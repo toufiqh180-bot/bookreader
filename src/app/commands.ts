@@ -1,5 +1,5 @@
 /**
- * Every user action, by id. The desktop menu (electron/menu.cjs), toolbar
+ * Every user action, by id. Toolbar
  * buttons, keyboard shortcuts and the selection bar all dispatch these ids.
  *
  * Handlers that only make sense with a book open are wrapped in `withPane`

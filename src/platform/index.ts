@@ -1,12 +1,12 @@
 /** Picks the platform implementation for the current host, once. */
-import { ElectronPlatform } from './electron-platform.ts';
+import { TauriPlatform } from './tauri-platform.ts';
 import { WebPlatform } from './web-platform.ts';
 import type { Platform } from './platform.ts';
 
 let instance: Platform | null = null;
 
 export function getPlatform(): Platform {
-  instance ??= window.bookreaderHost ? new ElectronPlatform(window.bookreaderHost) : new WebPlatform();
+  instance ??= '__TAURI_INTERNALS__' in window ? new TauriPlatform() : new WebPlatform();
   return instance;
 }
 

@@ -1,6 +1,9 @@
-# Builds the desktop installers on macOS, Windows and Linux when a version tag
-# is pushed (e.g. `git tag v0.2.0 && git push --tags`) and attaches them to a
-# draft GitHub release.
+# Builds the desktop apps on macOS, Windows and Linux when a version tag is
+# pushed (e.g. `git tag v0.2.0 && git push --tags`) and attaches them to a
+# draft GitHub release:
+#   macOS    BookReader.dmg (drag to Applications) and BookReader-<tag>-macos.zip
+#   Windows  BookReader_<version>_x64-setup.exe (installer) and .msi
+#   Linux    .AppImage and .deb
 name: Release
 
 on:
@@ -17,11 +20,11 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            args: --mac --arm64 --x64
+            args: --target universal-apple-darwin
           - os: windows-latest
-            args: --win
+            args: ''
           - os: ubuntu-latest
-            args: --linux
+            args: ''
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -29,11 +32,33 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Linux system libraries
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
       - run: npm ci
       - run: npm test
-      - run: npm run build
-      - run: npx electron-builder --config electron-builder.config.cjs ${{ matrix.args }} --publish always
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Unsigned builds; add Apple/Windows signing secrets here when available.
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: BookReader ${{ github.ref_name }}
+          releaseDraft: true
+          args: ${{ matrix.args }}
+      - name: Attach a ZIP of the macOS app
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd src-tauri/target/universal-apple-darwin/release/bundle/macos
+          ditto -c -k --keepParent BookReader.app "BookReader-${{ github.ref_name }}-macos.zip"
+          gh release upload "${{ github.ref_name }}" "BookReader-${{ github.ref_name }}-macos.zip" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Unsigned builds; add code-signing secrets here when available.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
