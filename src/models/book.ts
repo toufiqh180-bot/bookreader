@@ -71,8 +71,10 @@ export class Book extends Emitter<BookEvents> {
       platform.loadExtra<Record<number, OcrPage>>(id, 'ocr'),
       platform.loadExtra<CropBoxes>(id, 'crop'),
     ]);
-    await platform.rememberBook(id, file);
-    return new Book({ id, name: file.name, path: file.path, doc, record, ocr, crop, platform, source });
+    // Android's picker gives an opaque id ("document:16") rather than a file name.
+    const name = /\.pdf$/i.test(file.name) ? file.name : `${(await doc.metadataTitle()) ?? 'Untitled book'}.pdf`;
+    await platform.rememberBook(id, { ...file, name });
+    return new Book({ id, name, path: file.path, doc, record, ocr, crop, platform, source });
   }
 
   private constructor(init: {

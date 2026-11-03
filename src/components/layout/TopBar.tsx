@@ -25,11 +25,15 @@ export function TopBar() {
   const state = useAppState();
   const run = useCommand();
   const compact = useCompactLayout();
-  const isDesktopMac = app.platform.kind === 'desktop' && app.platform.isMac;
+  // isMac also covers iPhone and iPad (for ⌘ labels); only a Mac has window buttons to clear, and no touch points.
+  const isDesktopMac = app.platform.kind === 'desktop' && app.platform.isMac && navigator.maxTouchPoints === 0;
   const hasBook = Boolean(state.book);
 
   return (
-    <header data-tauri-drag-region className={cn('flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2', isDesktopMac && 'pl-[84px]')}>
+    <header
+      data-tauri-drag-region
+      className={cn('box-content flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2 pt-[env(safe-area-inset-top)]', isDesktopMac && 'pl-[84px]')}
+    >
       <nav className="flex min-w-0 flex-1 items-center gap-1" role="tablist" aria-label="Open books">
         <TabButton active={!hasBook} onClick={() => run('file.library')} label="Library">
           <Logo className="size-5" />

@@ -5,6 +5,7 @@
   "description": "A free, open-source PDF reader for books — macOS, Windows and Linux desktop apps, plus a web/PWA.",
   "license": "MIT",
   "scripts": {
+    "tauri": "tauri",
     "dev": "tauri dev",
     "dev:web": "vite",
     "build": "vite build",
