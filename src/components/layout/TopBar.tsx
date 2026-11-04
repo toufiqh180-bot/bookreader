@@ -3,12 +3,15 @@
  * the overflow menu on the right. On the desktop app it doubles as the window
  * title bar (draggable, with room for the macOS traffic lights).
  */
-import { Bookmark, ChevronDown, Eye, FileText, Link2, MoreHorizontal, PanelRight, Plus, ScanText, Search, Share, X } from 'lucide-react';
+import { Bookmark, ChevronDown, Eye, FileText, Link2, Monitor, Moon, MoreHorizontal, PanelRight, Plus, ScanText, Search, Share, Sun, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
@@ -154,6 +157,19 @@ export function TopBar() {
                 <DropdownMenuItem onClick={() => run('tools.recomputeCrop')}>Recompute margin crop</DropdownMenuItem>
               </>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Appearance</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={app.prefs.get('appearance')} onValueChange={(v) => run('view.appearance', v)}>
+              <DropdownMenuRadioItem value="system">
+                <Monitor /> System
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="light">
+                <Sun /> Light
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">
+                <Moon /> Dark
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => run('help.shortcuts')}>
               Keyboard shortcuts <DropdownMenuShortcut>⌘/</DropdownMenuShortcut>

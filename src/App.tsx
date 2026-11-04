@@ -21,11 +21,13 @@ import { useCompactLayout } from './hooks/use-media-query.ts';
 
 export function App() {
   const app = useApp();
-  const { darkChrome } = useAppState();
+  const { darkChrome, book } = useAppState();
   const compact = useCompactLayout();
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkChrome);
+    // Native controls (scrollbars, inputs, pickers) follow the app's appearance too.
+    document.documentElement.style.colorScheme = darkChrome ? 'dark' : 'light';
   }, [darkChrome]);
 
   // The host may deliver files/links (e.g. "Open with BookReader") once the UI exists.
@@ -41,7 +43,8 @@ export function App() {
           <SidePanel />
           {!compact && <PanelRail />}
         </main>
-        {compact && <ToolRail orientation="horizontal" />}
+        {/* On phones the bottom tool bar only makes sense with a book open. */}
+        {compact && book && <ToolRail orientation="horizontal" />}
       </div>
       <ShortcutsDialog />
       <Toaster position="top-right" theme={darkChrome ? 'dark' : 'light'} offset={{ top: 60, right: 64 }} mobileOffset={{ top: 56 }} />

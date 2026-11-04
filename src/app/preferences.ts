@@ -7,7 +7,11 @@ import { DEFAULT_REFLOW_SETTINGS, type ReflowSettings } from '../engine/reflow-v
 import type { PageTransition } from '../engine/layouts/page-turn.ts';
 import type { Platform } from '../platform/platform.ts';
 
+/** Light or dark app interface; 'system' follows the device setting. Pages are themed separately. */
+export type Appearance = 'system' | 'light' | 'dark';
+
 export interface PreferenceValues {
+  appearance: Appearance;
   /** Reading theme for books opened for the first time. */
   theme: string;
   customTint: { color: string; brightness: number };
@@ -22,6 +26,7 @@ export interface PreferenceValues {
 }
 
 export const DEFAULT_PREFERENCES: PreferenceValues = {
+  appearance: 'system',
   theme: 'light',
   customTint: { color: '#d8e8d0', brightness: 0.95 },
   reflow: DEFAULT_REFLOW_SETTINGS,

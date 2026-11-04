@@ -18,7 +18,7 @@ import { registerCommands } from './commands.ts';
 import { installKeymap } from './keymap.ts';
 import { ToolState } from './tool-state.ts';
 import type { Preferences } from './preferences.ts';
-import { applyTheme, themeById } from './themes.ts';
+import { applyTheme } from './themes.ts';
 import * as actions from './book-actions.ts';
 import { AnnotationController, type Tool } from '../engine/annotations/annotation-controller.ts';
 import { drawPageOverlay, flashRects } from '../engine/annotations/annotation-renderer.ts';
@@ -105,8 +105,17 @@ export class AppController {
     installKeymap(this.commands, { includeMenuShortcuts: !platform.hasAppMenu });
     this.tools.on('change', () => this.notify());
     prefs.on('change', () => this.notify());
+    this.#systemDark.addEventListener('change', () => this.notify());
     platform.onCommand((command, arg) => this.commands.run(command, arg));
     platform.onOpenRequest((request) => void this.handleOpenRequest(request));
+  }
+
+  readonly #systemDark = matchMedia('(prefers-color-scheme: dark)');
+
+  /** The interface follows the Appearance setting only; page colours come from the reading theme. */
+  #darkChrome(): boolean {
+    const appearance = this.prefs.get('appearance');
+    return appearance === 'dark' || (appearance === 'system' && this.#systemDark.matches);
   }
 
   // ---- Subscription (useSyncExternalStore) ------------------------------------
@@ -174,7 +183,7 @@ export class AppController {
         zoomPercent: 100,
         zoomMode: 'auto',
         theme,
-        darkChrome: themeById(theme).dark,
+        darkChrome: this.#darkChrome(),
         crop: false,
         splitScreen: false,
         splitSpreads: false,
@@ -199,7 +208,7 @@ export class AppController {
       zoomPercent: Math.round(pane.scale * 100),
       zoomMode: pane.zoomMode,
       theme,
-      darkChrome: themeById(theme).dark,
+      darkChrome: this.#darkChrome(),
       crop: pane.cropEnabled,
       splitScreen: this.activeTab!.isSplit,
       splitSpreads: pane.splitSpreads,
