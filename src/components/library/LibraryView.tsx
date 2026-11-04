@@ -42,7 +42,7 @@ export function LibraryView() {
             <p className="mt-1 text-muted-foreground">
               {app.platform.kind === 'web'
                 ? 'Your books and notes are stored in this browser, on this device.'
-                : 'Your books, notes and reading positions — stored on this computer.'}
+                : 'Your books, notes and reading positions — stored on this device.'}
             </p>
           </div>
           <Button onClick={() => run('file.open')} className="rounded-full px-5">
@@ -59,7 +59,7 @@ export function LibraryView() {
             >
               <BookOpen className="size-10" aria-hidden />
               <span className="mt-2 text-lg font-medium text-foreground">Open a PDF to start reading</span>
-              <span>or drop one anywhere on this window</span>
+              <span className="pointer-coarse:hidden">or drop one anywhere on this window</span>
             </button>
           </div>
         )}

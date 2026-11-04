@@ -1,10 +1,11 @@
 {
   "name": "bookreader",
   "productName": "BookReader",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "A free, open-source PDF reader for books — macOS, Windows and Linux desktop apps, plus a web/PWA.",
   "license": "MIT",
   "scripts": {
+    "tauri": "tauri",
     "dev": "tauri dev",
     "dev:web": "vite",
     "build": "vite build",

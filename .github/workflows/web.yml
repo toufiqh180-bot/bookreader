@@ -1,10 +1,11 @@
-# Publishes the web app (installable PWA) to GitHub Pages on every push to
-# main. Enable it once under Settings → Pages → Source: "GitHub Actions".
+# Publishes the site to GitHub Pages on every push to main: the download page
+# (site/) at the root and the web app (installable PWA) under /app/.
+# Enable it once under Settings → Pages → Source: "GitHub Actions".
 name: Web app
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -30,8 +31,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -R site/. _site/
+          cp public/icons/icon.svg _site/icon.svg
+          cp -R out/renderer _site/app
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: out/renderer
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -18,6 +18,7 @@ import type { MarkupType, ViewMode, ZoomMode } from '../models/types.ts';
 import type { Tool } from '../engine/annotations/annotation-controller.ts';
 import type { ReflowSettings } from '../engine/reflow-view.ts';
 import type { PageTransition } from '../engine/layouts/page-turn.ts';
+import type { Appearance } from './preferences.ts';
 
 const ZOOM_STEP = 1.2;
 const AUTOSCROLL_STEP = 1.25;
@@ -126,6 +127,7 @@ export function registerCommands(app: AppController): void {
       app.setTheme('custom');
     },
     'view.pageTransition': (style: PageTransition) => app.prefs.set('pageTransition', style),
+    'view.appearance': (appearance: Appearance) => app.prefs.set('appearance', appearance),
     'view.toggleAutoScroll': withPane((pane) => pane.toggleAutoScroll()),
     'view.toggleAutoScrollPause': withPane((pane) => pane.autoScroller.togglePause()),
     'view.autoScrollSpeed': withPane((pane, speed: number) => setAutoScrollSpeed(pane, speed)),

@@ -2,9 +2,11 @@
  * Thin wrapper around a pdf.js document: loading, page geometry, outline,
  * page labels, link destinations and cached text extraction.
  */
-import * as pdfjs from 'pdfjs-dist';
+// The legacy build polyfills recent JavaScript (e.g. Uint8Array#toHex) that
+// older phone web views lack; the modern build fails there on every PDF.
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { pageTextFromPdfItems, type PageText, type PdfTextItem } from '../lib/page-text.ts';
 import type { PageSize } from './types.ts';
 
@@ -83,6 +85,13 @@ export class PdfDocument {
   async #loadNavigation(): Promise<void> {
     this.outline = ((await this.proxy.getOutline().catch(() => null)) as OutlineItem[] | null) ?? [];
     this.pageLabels = await this.proxy.getPageLabels().catch(() => null);
+  }
+
+  /** The Title from the document's info dictionary, if it has one. */
+  async metadataTitle(): Promise<string | null> {
+    const { info } = await this.proxy.getMetadata();
+    const title = (info as { Title?: unknown }).Title;
+    return typeof title === 'string' && title.trim() ? title.trim() : null;
   }
 
   getPage(n: number): Promise<PDFPageProxy> {

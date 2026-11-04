@@ -5,4 +5,7 @@ coverage/
 *.log
 out/
 src-tauri/target/
-src-tauri/gen/
+src-tauri/gen/schemas/
+src-tauri/gen/apple/assets/
+src-tauri/gen/apple/Pods/
+src-tauri/gen/android/app/src/main/assets/

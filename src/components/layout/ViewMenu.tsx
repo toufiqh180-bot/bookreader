@@ -189,7 +189,7 @@ export function ViewMenu({ trigger }: { trigger: ReactNode }) {
           </Section>
         )}
 
-        <Section title="Theme">
+        <Section title="Page colour">
           <div className="grid grid-cols-3 gap-2">
             {THEMES.map((theme) => {
               const [bg, fg] = THEME_SAMPLES[theme.id];
