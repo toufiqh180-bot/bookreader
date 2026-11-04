@@ -1,0 +1,331 @@
+<!doctype html>
+<!--
+  BookReader download page (published to GitHub Pages by .github/workflows/web.yml,
+  with the web app under ./app/). It asks the GitHub API for the latest release and
+  points each button at the matching installer, so a new release needs no edits here.
+  Nothing on this page is tracked or stored.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BookReader — Download</title>
+    <meta name="description" content="BookReader is a free, open-source PDF reader made for reading books. Download it for macOS, Windows and Linux." />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        --bg: #f7f7f8;
+        --card: #ffffff;
+        --text: #1d1d1f;
+        --muted: #6b6b73;
+        --border: #e4e4e8;
+        --accent: #2f6fed;
+        --accent-text: #ffffff;
+        --accent-soft: #eaf1ff;
+        --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 8px 28px rgb(0 0 0 / 0.07);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #15161a;
+          --card: #1d1e23;
+          --text: #ececf1;
+          --muted: #a0a1aa;
+          --border: #2c2d34;
+          --accent: #5b8fff;
+          --accent-soft: #23304d;
+          --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 28px rgb(0 0 0 / 0.35);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Inter,
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 64px 16px 48px;
+      }
+      .hero {
+        text-align: center;
+      }
+      .hero img {
+        width: 112px;
+        height: 112px;
+      }
+      h1 {
+        margin: 12px 0 6px;
+        font-size: clamp(32px, 6vw, 44px);
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+      }
+      .tagline {
+        margin: 0 auto;
+        max-width: 520px;
+        color: var(--muted);
+        font-size: 18px;
+      }
+      .primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 28px;
+        padding: 14px 26px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--accent-text);
+        font-weight: 600;
+        font-size: 17px;
+        text-decoration: none;
+        box-shadow: var(--shadow);
+        transition:
+          transform 0.15s,
+          filter 0.15s;
+      }
+      .primary:hover {
+        filter: brightness(1.06);
+        transform: translateY(-1px);
+      }
+      .primary svg {
+        width: 20px;
+        height: 20px;
+      }
+      .meta {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .platforms {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 48px;
+      }
+      .platform {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--card);
+        color: inherit;
+        text-decoration: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      a.platform:hover {
+        border-color: var(--accent);
+        box-shadow: var(--shadow);
+      }
+      .platform.current {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .platform strong {
+        font-size: 17px;
+      }
+      .platform span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .platform.unavailable {
+        opacity: 0.55;
+      }
+      .help {
+        margin-top: 40px;
+        padding: 20px 22px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--card);
+      }
+      .help h2 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+      .help p,
+      .help ol {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .help ol {
+        padding-left: 20px;
+      }
+      code {
+        padding: 1px 6px;
+        border-radius: 6px;
+        background: var(--accent-soft);
+        font:
+          13px ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        word-break: break-all;
+      }
+      footer {
+        margin-top: 48px;
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
+      }
+      footer a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <img src="icon.svg" alt="" />
+        <h1>BookReader</h1>
+        <p class="tagline">A free, open-source PDF reader made for reading books — with page turns, highlights, notes and OCR.</p>
+        <a id="primary" class="primary" href="https://github.com/toufiqh180-bot/bookreader/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" />
+          </svg>
+          <span id="primary-label">Download BookReader</span>
+        </a>
+        <p id="meta" class="meta">Free · macOS, Windows and Linux</p>
+      </section>
+
+      <section class="platforms" aria-label="All downloads">
+        <a class="platform" data-os="mac" href="https://github.com/toufiqh180-bot/bookreader/releases/latest">
+          <strong>macOS</strong><span>Apple silicon and Intel</span>
+        </a>
+        <a class="platform" data-os="windows" href="https://github.com/toufiqh180-bot/bookreader/releases/latest">
+          <strong>Windows</strong><span>Windows 10 and 11</span>
+        </a>
+        <a class="platform" data-os="linux" href="https://github.com/toufiqh180-bot/bookreader/releases/latest">
+          <strong>Linux</strong><span>AppImage</span>
+        </a>
+        <a class="platform" data-os="web" href="app/"> <strong>Web</strong><span>Read in your browser, no install</span> </a>
+      </section>
+
+      <section id="help" class="help" hidden></section>
+
+      <footer>
+        <span id="version"></span>
+        <a href="https://github.com/toufiqh180-bot/bookreader/releases">All releases</a> ·
+        <a href="https://github.com/toufiqh180-bot/bookreader">Source code</a>
+      </footer>
+    </main>
+
+    <script>
+      const REPO = 'toufiqh180-bot/bookreader';
+
+      const PLATFORMS = {
+        mac: { name: 'macOS', patterns: [/universal\.dmg$/i, /\.dmg$/i] },
+        windows: { name: 'Windows', patterns: [/setup\.exe$/i, /\.msi$/i, /\.exe$/i] },
+        linux: { name: 'Linux', patterns: [/\.AppImage$/i, /\.deb$/i, /\.rpm$/i] },
+      };
+
+      // First-run warnings, because the apps aren't signed by Apple or Microsoft yet.
+      const HELP = {
+        mac: `<h2>Opening it on a Mac</h2><ol>
+          <li>Open the downloaded <b>.dmg</b> and drag <b>BookReader</b> onto <b>Applications</b>.</li>
+          <li>The first time, macOS may say it can't verify the app. Open <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>.</li>
+          <li>If it says the app is damaged, run <code>xattr -dr com.apple.quarantine /Applications/BookReader.app</code> in Terminal once.</li></ol>`,
+        windows: `<h2>Installing on Windows</h2><p>Run the installer. If SmartScreen warns about an unknown publisher, click <b>More info → Run anyway</b>.</p>`,
+        linux: `<h2>Running on Linux</h2><p>Make the AppImage executable with <code>chmod +x BookReader*.AppImage</code>, then double-click it.</p>`,
+        mobile: `<h2>On a phone or tablet?</h2><p>The iPhone and Android apps are in testing. Meanwhile, <a href="app/">BookReader runs in your browser</a> and can be added to your home screen.</p>`,
+      };
+
+      function detectOS() {
+        const ua = navigator.userAgent;
+        const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+        if (/iPhone|iPad|iPod|Android/i.test(ua) || (/Mac/.test(platform) && navigator.maxTouchPoints > 1)) return 'mobile';
+        if (/Mac/i.test(platform + ua)) return 'mac';
+        if (/Win/i.test(platform + ua)) return 'windows';
+        if (/Linux|X11|CrOS/i.test(platform + ua)) return 'linux';
+        return null;
+      }
+
+      function pickAsset(assets, patterns) {
+        for (const pattern of patterns) {
+          const asset = assets.find((a) => pattern.test(a.name));
+          if (asset) return asset;
+        }
+        return null;
+      }
+
+      const mb = (bytes) => `${(bytes / 1048576).toFixed(0)} MB`;
+
+      function showHelp(os) {
+        const help = document.getElementById('help');
+        if (!HELP[os]) return;
+        help.innerHTML = HELP[os];
+        help.hidden = false;
+      }
+
+      async function init() {
+        const os = detectOS();
+        const primary = document.getElementById('primary');
+        const label = document.getElementById('primary-label');
+        const meta = document.getElementById('meta');
+
+        if (os === 'mobile') {
+          primary.href = 'app/';
+          label.textContent = 'Open BookReader in your browser';
+          meta.textContent = 'Desktop downloads are below';
+        }
+        showHelp(os);
+
+        let release;
+        try {
+          const response = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } });
+          if (!response.ok) throw new Error(String(response.status));
+          release = await response.json();
+        } catch {
+          return; // Every link already falls back to the releases page.
+        }
+
+        document.getElementById('version').textContent = `Version ${release.tag_name.replace(/^v/, '')} · `;
+
+        for (const [id, info] of Object.entries(PLATFORMS)) {
+          const card = document.querySelector(`.platform[data-os="${id}"]`);
+          const asset = pickAsset(release.assets, info.patterns);
+          if (id === os) card.classList.add('current');
+          if (!asset) {
+            card.removeAttribute('href');
+            card.classList.add('unavailable');
+            card.querySelector('span').textContent = 'Coming soon';
+            if (id === os) {
+              primary.href = 'app/';
+              label.textContent = 'Open BookReader in your browser';
+              meta.textContent = `The ${info.name} version is coming soon`;
+              document.getElementById('help').hidden = true;
+            }
+            continue;
+          }
+          card.href = asset.browser_download_url;
+          card.querySelector('span').textContent += ` · ${mb(asset.size)}`;
+          if (id === os) {
+            primary.href = asset.browser_download_url;
+            label.textContent = `Download for ${info.name}`;
+            meta.textContent = `Version ${release.tag_name.replace(/^v/, '')} · ${mb(asset.size)} · Free`;
+          }
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>
