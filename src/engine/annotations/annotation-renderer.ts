@@ -1,5 +1,6 @@
 /**
- * Draws a page's annotations and search hits into its SVG overlay. The
+ * Draws a page's annotations, search hits and the sentence being read aloud
+ * into its SVG overlay. The
  * overlay group's transform maps PDF user space onto the page, so everything
  * here is in PDF units (y grows upward).
  */
@@ -13,9 +14,18 @@ const COMMENT_DOT_RADIUS = 3;
 // A speech-bubble pin, 18×19 units, drawn downward from its top-left corner.
 const NOTE_PIN_PATH = 'M2 0h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7l-5 4v-4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2z';
 
-export function drawPageOverlay(view: PageView, searchHits: Array<{ rect: PdfRect; current: boolean }> = []): void {
+export function drawPageOverlay(view: PageView, searchHits: Array<{ rect: PdfRect; current: boolean }> = [], spoken: PdfRect[] = []): void {
   const group = view.overlayGroup;
   group.replaceChildren();
+  if (spoken.length) {
+    // Under the annotations, so highlights the reader made stay visible on top.
+    const sentence = svgEl('g', { class: 'spoken' });
+    for (const rect of spoken) {
+      const b = toBox(rect);
+      sentence.append(svgEl('rect', { x: b.x - 1, y: b.y - 1, width: b.w + 2, height: b.h + 2, rx: 2 }));
+    }
+    group.append(sentence);
+  }
   for (const annotation of view.book.annotations.onPage(view.pageNumber)) group.append(renderAnnotation(annotation));
   if (searchHits.length) {
     const hits = svgEl('g', { class: 'search-hits' });

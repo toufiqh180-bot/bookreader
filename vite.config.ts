@@ -13,6 +13,8 @@ const modules = (p: string) => path.join('node_modules', p).replaceAll('\\', '/'
 export default defineConfig({
   base: './', // relative URLs so the build works inside the desktop shell and from any web path
   build: { outDir: 'out/renderer', emptyOutDir: true, target: 'es2022' },
+  // Module workers, so the natural-voice worker can load the ONNX runtime with import().
+  worker: { format: 'es' },
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   plugins: [
     react(),
@@ -27,6 +29,8 @@ export default defineConfig({
         { src: modules('tesseract.js/dist/worker.min.js'), dest: 'vendor/tesseract' },
         { src: modules('tesseract.js-core/tesseract-core*-lstm.wasm.js'), dest: 'vendor/tesseract/core' },
         { src: modules('@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz'), dest: 'vendor/tesseract/lang' },
+        // ONNX runtime for the natural read-aloud voice (services/speech), loaded only when it's used.
+        { src: modules('@huggingface/transformers/dist/ort-wasm-simd-threaded.jsep.*'), dest: 'vendor/ort' },
       ],
     }),
     VitePWA({
@@ -50,8 +54,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,mjs,css,html,png,svg,wasm,gz,bcmap,pfb,ttf,icc}'],
         maximumFileSizeToCacheInBytes: 40 * 1024 * 1024,
+        // The voice runtime is large and optional; it's fetched the first time read-aloud uses it.
+        globIgnores: ['**/vendor/ort/**'],
       },
     }),
   ],
-  server: { port: 5173, strictPort: true },
+  server: { host: true, port: 5173, strictPort: true },
 });

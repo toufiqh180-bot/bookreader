@@ -19,6 +19,7 @@ import type { Tool } from '../engine/annotations/annotation-controller.ts';
 import type { ReflowSettings } from '../engine/reflow-view.ts';
 import type { PageTransition } from '../engine/layouts/page-turn.ts';
 import type { Appearance } from './preferences.ts';
+import type { SpeechEngineId } from '../services/speech/engine.ts';
 
 const ZOOM_STEP = 1.2;
 const AUTOSCROLL_STEP = 1.25;
@@ -134,6 +135,29 @@ export function registerCommands(app: AppController): void {
     'view.autoScrollFaster': withPane((pane) => (pane.autoScroller.active ? setAutoScrollSpeed(pane, pane.autoScroller.speed * AUTOSCROLL_STEP) : false)),
     'view.autoScrollSlower': withPane((pane) => (pane.autoScroller.active ? setAutoScrollSpeed(pane, pane.autoScroller.speed / AUTOSCROLL_STEP) : false)),
 
+    'view.toggleFocus': () => {
+      app.setFocus(!app.focus);
+      if (app.focus) {
+        const touch = matchMedia('(pointer: coarse)').matches;
+        toast('Focus mode', { description: touch ? 'Tap the page to show the controls.' : 'Click the page to show the controls. Esc leaves.', duration: 2500 });
+      }
+    },
+    'view.tapPage': () => app.tapPage(),
+
+    // ---- Read aloud ----
+    'speech.toggle': withPane((pane) => app.readAloud.toggle(pane)),
+    'speech.readFrom': withPane((pane) => {
+      app.readAloud.engine.unlock(); // inside the tap, for iOS
+      void app.readAloud.start(pane); // starts at the selected text
+    }),
+    'speech.stop': () => app.readAloud.stop(),
+    'speech.next': () => app.readAloud.skip(1),
+    'speech.previous': () => app.readAloud.skip(-1),
+    'speech.rate': (rate: number) => app.readAloud.setRate(rate),
+    'speech.voice': (voice: string) => app.readAloud.setVoice(voice),
+    'speech.engine': (engine: SpeechEngineId) => app.readAloud.setEngine(engine),
+    'speech.download': () => app.readAloud.download(),
+
     // ---- Annotation tools ----
     'tool.set': (tool: Tool) => app.tools.set(tool),
     'tool.color': (color: string) => app.tools.setColor(color),
@@ -148,6 +172,7 @@ export function registerCommands(app: AppController): void {
 
     // ---- App ----
     'app.escape': () => {
+      if (app.focus) app.setFocus(false);
       app.closeEditor();
       clearSelection();
       app.activePane?.autoScroller.stop();

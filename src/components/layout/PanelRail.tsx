@@ -19,7 +19,7 @@ export function PanelRail() {
   const state = useAppState();
   const run = useCommand();
   return (
-    <nav aria-label="Panels" className="flex w-[52px] shrink-0 flex-col items-center gap-1 border-l bg-sidebar py-2.5">
+    <nav aria-label="Panels" data-chrome="right" className="flex w-[52px] shrink-0 flex-col items-center gap-1 border-l bg-sidebar py-2.5">
       {PANELS.map(({ id, title, icon: Icon, shortcut }) => (
         <IconButton
           key={id}

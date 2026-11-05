@@ -1,7 +1,7 @@
 {
   "name": "bookreader",
   "productName": "BookReader",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A free, open-source PDF reader for books — macOS, Windows and Linux desktop apps, plus a web/PWA.",
   "license": "MIT",
   "scripts": {
@@ -39,6 +39,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^16.4.0",
     "idb-keyval": "^6.2.2",
+    "kokoro-js": "^1.2.1",
     "lucide-react": "^1.5.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.4.299",

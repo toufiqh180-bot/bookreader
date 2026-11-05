@@ -1,7 +1,8 @@
 /**
- * Annotation tools. A vertical rail on the left edge on desktop/tablet (the
- * "quick tools" strip of modern PDF editors); a horizontal bar along the
- * bottom on phones. Includes the active tool's colour and undo/redo.
+ * Annotation tools as a vertical rail on the left edge on desktop and tablets
+ * (the "quick tools" strip of modern PDF editors), with the active tool's
+ * colour and undo/redo. Phones use PhoneToolbar instead. The tool icons and
+ * the colour/line-weight controls are shared with it.
  */
 import { Brush, Eraser, Highlighter, MousePointer2, PenLine, Redo2, StickyNote, Strikethrough, Underline, Undo2, Waves, type LucideIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -13,7 +14,7 @@ import { useAppState, useCommand } from '../../hooks/use-app.ts';
 import { TOOLS } from '../../app/tool-state.ts';
 import type { Tool } from '../../engine/annotations/annotation-controller.ts';
 
-const ICONS: Record<Tool, LucideIcon> = {
+export const TOOL_ICONS: Record<Tool, LucideIcon> = {
   select: MousePointer2,
   highlight: Highlighter,
   underline: Underline,
@@ -26,41 +27,63 @@ const ICONS: Record<Tool, LucideIcon> = {
 };
 
 /** Tools grouped as shown, separated by dividers. */
-const GROUPS: Tool[][] = [['select'], ['highlight', 'underline', 'squiggly', 'strikeout', 'note'], ['pen', 'marker', 'eraser']];
+export const TOOL_GROUPS: Tool[][] = [['select'], ['highlight', 'underline', 'squiggly', 'strikeout', 'note'], ['pen', 'marker', 'eraser']];
 
-export function ToolRail({ orientation }: { orientation: 'vertical' | 'horizontal' }) {
+/** Colours and (for ink tools) line weight of the active tool. */
+export function ToolStyle() {
   const state = useAppState();
   const run = useCommand();
-  const vertical = orientation === 'vertical';
-  const tooltipSide = vertical ? 'right' : 'top';
+  return (
+    <>
+      <h3 className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{TOOLS[state.tool].label}</h3>
+      <Swatches value={state.toolColor} onChange={(color) => run('tool.color', color)} />
+      {TOOLS[state.tool].ink && (
+        <div className="flex flex-col gap-2 text-[13px]">
+          <div className="flex justify-between">
+            <span>Line weight</span>
+            <span className="text-muted-foreground tabular-nums">{state.toolWidth}</span>
+          </div>
+          <Slider
+            value={[state.toolWidth]}
+            min={state.tool === 'marker' ? 4 : 0.5}
+            max={state.tool === 'marker' ? 30 : 12}
+            step={0.5}
+            onValueChange={([w]) => run('tool.width', w)}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+export const isStyleable = (tool: Tool): boolean => !['select', 'eraser'].includes(tool);
+
+export function ToolRail() {
+  const state = useAppState();
+  const run = useCommand();
   const disabled = !state.book;
-  const styleable = !['select', 'eraser'].includes(state.tool);
-  const divider = <div className={cn('shrink-0 bg-border', vertical ? 'mx-auto my-1.5 h-px w-6' : 'mx-1 h-6 w-px')} />;
+  const divider = <div className="mx-auto my-1.5 h-px w-6 shrink-0 bg-border" />;
 
   return (
     <nav
       aria-label="Annotation tools"
+      data-chrome="left"
       className={cn(
-        'flex shrink-0 items-center bg-sidebar',
-        // Horizontal: a scrollable row. Auto margins on the first/last child centre it when it
-        // fits; unlike justify-center, they never push the first tools out of reach.
-        vertical
-          ? 'w-[52px] flex-col border-r py-2.5'
-          : 'h-14 gap-0.5 overflow-x-auto border-t px-2 pb-[env(safe-area-inset-bottom)] [&>:first-child]:ml-auto [&>:last-child]:mr-auto',
+        'flex w-[52px] shrink-0 flex-col items-center border-r bg-sidebar py-2.5',
         disabled && '[&_.tool]:pointer-events-none [&_.tool]:opacity-35',
       )}
     >
-      {GROUPS.map((group, i) => (
-        <div key={group.join()} className={cn('flex gap-1', vertical ? 'flex-col' : 'items-center')}>
+      {TOOL_GROUPS.map((group, i) => (
+        <div key={group.join()} className="flex flex-col gap-1">
           {i > 0 && divider}
           {group.map((tool) => {
-            const Icon = ICONS[tool];
+            const Icon = TOOL_ICONS[tool];
             return (
               <IconButton
                 key={tool}
                 label={TOOLS[tool].label}
                 shortcut={TOOLS[tool].key}
-                tooltipSide={tooltipSide}
+                tooltipSide="right"
                 active={state.tool === tool}
                 onClick={() => run('tool.set', tool)}
                 className="tool size-[38px] rounded-[10px]"
@@ -77,7 +100,7 @@ export function ToolRail({ orientation }: { orientation: 'vertical' | 'horizonta
           <button
             type="button"
             aria-label="Colour and line weight"
-            disabled={disabled || !styleable}
+            disabled={disabled || !isStyleable(state.tool)}
             className="tool grid size-[38px] shrink-0 place-items-center rounded-[10px] hover:bg-muted disabled:opacity-35"
           >
             <span
@@ -86,47 +109,16 @@ export function ToolRail({ orientation }: { orientation: 'vertical' | 'horizonta
             />
           </button>
         </PopoverTrigger>
-        <PopoverContent side={vertical ? 'right' : 'top'} className="flex w-64 flex-col gap-4">
-          <h3 className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{TOOLS[state.tool].label}</h3>
-          <Swatches value={state.toolColor} onChange={(color) => run('tool.color', color)} />
-          {TOOLS[state.tool].ink && (
-            <div className="flex flex-col gap-2 text-[13px]">
-              <div className="flex justify-between">
-                <span>Line weight</span>
-                <span className="text-muted-foreground tabular-nums">{state.toolWidth}</span>
-              </div>
-              <Slider
-                value={[state.toolWidth]}
-                min={state.tool === 'marker' ? 4 : 0.5}
-                max={state.tool === 'marker' ? 30 : 12}
-                step={0.5}
-                onValueChange={([w]) => run('tool.width', w)}
-              />
-            </div>
-          )}
+        <PopoverContent side="right" className="flex w-64 flex-col gap-4">
+          <ToolStyle />
         </PopoverContent>
       </Popover>
-      {vertical && <div className="flex-1" />}
-      {vertical ? null : divider}
-      <div className={cn('flex gap-1', vertical ? 'flex-col' : 'items-center')}>
-        <IconButton
-          label="Undo"
-          shortcut="⌘Z"
-          tooltipSide={tooltipSide}
-          onClick={() => run('edit.undo')}
-          disabled={disabled}
-          className="size-[38px] rounded-[10px]"
-        >
+      <div className="flex-1" />
+      <div className="flex flex-col gap-1">
+        <IconButton label="Undo" shortcut="⌘Z" tooltipSide="right" onClick={() => run('edit.undo')} disabled={disabled} className="size-[38px] rounded-[10px]">
           <Undo2 />
         </IconButton>
-        <IconButton
-          label="Redo"
-          shortcut="⇧⌘Z"
-          tooltipSide={tooltipSide}
-          onClick={() => run('edit.redo')}
-          disabled={disabled}
-          className="size-[38px] rounded-[10px]"
-        >
+        <IconButton label="Redo" shortcut="⇧⌘Z" tooltipSide="right" onClick={() => run('edit.redo')} disabled={disabled} className="size-[38px] rounded-[10px]">
           <Redo2 />
         </IconButton>
       </div>

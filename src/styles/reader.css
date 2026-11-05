@@ -291,6 +291,12 @@
   opacity: 0.35;
 }
 
+/* The sentence being read aloud (app/read-aloud.ts). */
+.spoken rect {
+  fill: color-mix(in srgb, var(--primary) 18%, transparent);
+  mix-blend-mode: multiply;
+}
+
 .search-hit {
   fill: rgb(255 170 0 / 0.35);
 }
@@ -347,7 +353,7 @@
 }
 
 /* On dark pages multiply would hide highlights; screen keeps them visible. */
-:is([data-theme='dark'], [data-theme='night']) :is(.hl, .ink.marker) {
+:is([data-theme='dark'], [data-theme='night']) :is(.hl, .ink.marker, .spoken rect) {
   mix-blend-mode: screen;
   opacity: 0.35;
 }

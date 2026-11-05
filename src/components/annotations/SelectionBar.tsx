@@ -1,9 +1,10 @@
 /**
  * Floating toolbar above selected text (select tool only): quick highlight
- * colours, underline, squiggly, strikethrough, note, copy, link and search.
+ * colours, underline, squiggly, strikethrough, note, read aloud from here,
+ * copy, link and search.
  */
 import { useEffect, useState } from 'react';
-import { Copy, Link2, Search, StickyNote, Strikethrough, Underline, Waves } from 'lucide-react';
+import { Copy, Headphones, Link2, Search, StickyNote, Strikethrough, Underline, Waves } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { IconButton } from '../common/IconButton.tsx';
@@ -89,6 +90,9 @@ export function SelectionBar() {
           <StickyNote />
         </IconButton>
         <div className="mx-1 h-5 w-px bg-border" />
+        <IconButton label="Read aloud from here" shortcut="R" className="size-8" onClick={() => run('speech.readFrom')}>
+          <Headphones />
+        </IconButton>
         <IconButton label="Copy" className="size-8" onClick={() => void app.platform.copyText(selectedText()).then(() => toast.success('Copied'))}>
           <Copy />
         </IconButton>

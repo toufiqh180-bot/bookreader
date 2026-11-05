@@ -50,6 +50,8 @@ const READING_KEYS: Binding[] = [
   [plain('m'), 'tool.set', 'marker'],
   [plain('e'), 'tool.set', 'eraser'],
   [plain('t'), 'view.cycleTheme'],
+  [plain('r'), 'speech.toggle'],
+  [plain('f'), 'view.toggleFocus'],
   [plain('escape'), 'app.escape'],
 ];
 
@@ -109,6 +111,8 @@ export const SHORTCUT_HELP: Array<[string, string, string]> = [
   ['Reflow text view', 'Ctrl+R', '⌘R'],
   ['Smart margin crop', 'Ctrl+K', '⌘K'],
   ['Auto-scroll (Space pauses, ↑/↓ speed)', 'Ctrl+Shift+A', '⇧⌘A'],
+  ['Read aloud: play / pause (select text first to start there)', 'R', 'R'],
+  ['Focus mode: just the book (Esc leaves)', 'F', 'F'],
   ['Highlight selection', 'H', 'H'],
   ['Sticky note on selection', 'N', 'N'],
   ['Cycle light / sepia / dark', 'T', 'T'],

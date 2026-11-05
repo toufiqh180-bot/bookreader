@@ -61,6 +61,46 @@
   --floating-shadow: 0 12px 32px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.3);
 }
 
+/* Focus mode and tap-to-hide (App.tsx): bars tagged data-chrome slide out of
+   the layout and fade, so the book takes the whole screen. The page area
+   keeps clear of the iPhone status bar meanwhile. */
+[data-chrome],
+main {
+  transition:
+    margin 0.32s ease,
+    padding 0.32s ease,
+    opacity 0.24s ease,
+    translate 0.32s ease;
+}
+html[data-chrome-hidden] [data-chrome] {
+  opacity: 0;
+  pointer-events: none;
+}
+html[data-chrome-hidden] [data-chrome='top'] {
+  margin-top: calc(-3rem - 1px - env(safe-area-inset-top));
+}
+html[data-chrome-hidden] [data-chrome='bottom'] {
+  margin-bottom: calc(-3.5rem - 1px - env(safe-area-inset-bottom));
+}
+html[data-chrome-hidden] [data-chrome='left'] {
+  margin-left: -53px;
+}
+html[data-chrome-hidden] [data-chrome='right'] {
+  margin-right: -53px;
+}
+html[data-chrome-hidden] [data-chrome='float'] {
+  translate: -50% 16px; /* Tailwind centres it with `translate` */
+}
+html[data-chrome-hidden] main {
+  padding-top: env(safe-area-inset-top);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-chrome],
+  main {
+    transition: opacity 0.2s ease;
+  }
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

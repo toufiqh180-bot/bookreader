@@ -46,3 +46,11 @@ test('skips rotated runs', () => {
   const text = pageTextFromPdfItems([{ str: 'vertical', transform: [0, 10, -10, 0, 50, 50], width: 80, height: 10 }]);
   assert.deepEqual(rectsForRange(text, 0, 4), []);
 });
+
+test('places characters by measured width when a measure is given', () => {
+  const text = pageTextFromPdfItems([{ str: 'iiWW', transform: [10, 0, 0, 10, 0, 0], width: 100, height: 10 }]);
+  // "i" is a quarter the width of "W": the first two characters take 1/5 of the run, not half.
+  const measure = (s: string) => [...s].reduce((w, c) => w + (c === 'i' ? 1 : 4), 0);
+  const [rect] = rectsForRange(text, 0, 2, measure);
+  assert.equal(Math.round(rect.x2), 20);
+});

@@ -3,7 +3,25 @@
  * the overflow menu on the right. On the desktop app it doubles as the window
  * title bar (draggable, with room for the macOS traffic lights).
  */
-import { Bookmark, ChevronDown, Eye, FileText, Link2, Monitor, Moon, MoreHorizontal, PanelRight, Plus, ScanText, Search, Share, Sun, X } from 'lucide-react';
+import {
+  Bookmark,
+  ChevronDown,
+  Eye,
+  FileText,
+  Focus,
+  Headphones,
+  Link2,
+  Monitor,
+  Moon,
+  MoreHorizontal,
+  PanelRight,
+  Plus,
+  ScanText,
+  Search,
+  Share,
+  Sun,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -35,6 +53,7 @@ export function TopBar() {
   return (
     <header
       data-tauri-drag-region
+      data-chrome="top"
       className={cn('box-content flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2 pt-[env(safe-area-inset-top)]', isDesktopMac && 'pl-[84px]')}
     >
       <nav className="flex min-w-0 flex-1 items-center gap-1" role="tablist" aria-label="Open books">
@@ -74,6 +93,9 @@ export function TopBar() {
       <div className="flex shrink-0 items-center gap-1">
         {hasBook && (
           <>
+            <IconButton label={state.focus ? 'Leave focus mode' : 'Focus mode'} shortcut="F" active={state.focus} onClick={() => run('view.toggleFocus')}>
+              <Focus />
+            </IconButton>
             <ViewMenu
               trigger={
                 <Button variant="ghost" size={compact ? 'icon' : 'sm'} className="gap-1.5 font-medium">
@@ -88,6 +110,9 @@ export function TopBar() {
             />
             {!compact && (
               <>
+                <IconButton label="Read aloud" shortcut="R" active={state.readAloud.status !== 'idle'} onClick={() => run('speech.toggle')}>
+                  <Headphones />
+                </IconButton>
                 <IconButton label="Find" shortcut="⌘F" onClick={() => run('nav.find')}>
                   <Search />
                 </IconButton>

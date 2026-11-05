@@ -20,6 +20,7 @@ import { ToolState } from './tool-state.ts';
 import type { Preferences } from './preferences.ts';
 import { applyTheme } from './themes.ts';
 import * as actions from './book-actions.ts';
+import { ReadAloud, type ReadAloudState } from './read-aloud.ts';
 import { AnnotationController, type Tool } from '../engine/annotations/annotation-controller.ts';
 import { drawPageOverlay, flashRects } from '../engine/annotations/annotation-renderer.ts';
 import type { PaneServices, ReaderPane } from '../engine/reader-pane.ts';
@@ -38,6 +39,9 @@ export interface EditTarget {
   annotationId: string;
   at?: { x: number; y: number };
 }
+
+/** In focus mode, bars brought back with a tap fade again after this long unused. */
+const FOCUS_FADE_MS = 3500;
 
 /** Everything the UI renders from. Rebuilt (never mutated) on every change. */
 export interface ViewState {
@@ -72,6 +76,11 @@ export interface ViewState {
   /** Bumped when the stored library changes, so the library screen reloads. */
   libraryVersion: number;
   shortcutsOpen: boolean;
+  readAloud: ReadAloudState;
+  /** Focus mode: just the book; a tap brings the bars back for a moment. */
+  focus: boolean;
+  /** The bars are hidden (focus mode, or a tap on the page on touch screens). */
+  chromeHidden: boolean;
 }
 
 export class AppController {
@@ -80,6 +89,7 @@ export class AppController {
   readonly tools: ToolState;
   readonly commands = new CommandRegistry();
   readonly annotations: AnnotationController;
+  readonly readAloud: ReadAloud;
   tabs: Tab[] = [];
   activeTab: Tab | null = null;
   sidebarOpen: boolean;
@@ -87,6 +97,10 @@ export class AppController {
   editing: EditTarget | null = null;
   shortcutsOpen = false;
   libraryVersion = 0;
+  focus = false;
+  /** The bars are tucked away; see `chromeHidden` in ViewState for when that applies. */
+  #barsHidden = false;
+  #fadeTimer: ReturnType<typeof setTimeout> | undefined;
   readonly #searches = new WeakMap<Book, BookSearch>();
   readonly #listeners = new Set<() => void>();
   #snapshot: ViewState;
@@ -99,6 +113,12 @@ export class AppController {
     this.sidebarOpen = prefs.get('sidebarOpen');
     this.sidebarPanel = prefs.get('sidebarPanel') as PanelId;
     this.annotations = new AnnotationController(this.tools, { edit: (pane, id, at) => this.editAnnotation(pane, id, at) });
+    this.readAloud = new ReadAloud(prefs);
+    this.readAloud.on('change', () => this.notify());
+    this.readAloud.on('highlight', (pages) => {
+      const book = this.readAloud.pane?.book ?? this.activeTab?.book;
+      if (book) this.forEachPane(book, (pane) => pages.forEach((page) => pane.redrawOverlays(page)));
+    });
     this.#snapshot = this.#buildSnapshot();
 
     registerCommands(this);
@@ -164,6 +184,10 @@ export class AppController {
       editing: this.editing,
       libraryVersion: this.libraryVersion,
       shortcutsOpen: this.shortcutsOpen,
+      readAloud: this.readAloud.state,
+      focus: this.focus,
+      // Panels, the note editor and the library always keep their bars.
+      chromeHidden: this.#barsHidden && Boolean(this.activeTab) && !this.sidebarOpen && !this.editing,
       reflowSettings: this.reflowSettings(),
     };
     if (!pane) {
@@ -227,7 +251,12 @@ export class AppController {
   }
 
   readonly #paneServices: PaneServices = {
-    drawOverlay: (view) => drawPageOverlay(view, this.#searches.get(view.book)?.hitsOn(view.pageNumber)),
+    drawOverlay: (view) =>
+      drawPageOverlay(
+        view,
+        this.#searches.get(view.book)?.hitsOn(view.pageNumber),
+        this.readAloud.pane?.book === view.book ? this.readAloud.highlightOn(view.pageNumber) : [],
+      ),
     flash: (view, rects) => flashRects(view, rects),
     isSelectTool: () => this.tools.current() === 'select',
     pageTransition: () => this.prefs.get('pageTransition'),
@@ -300,6 +329,7 @@ export class AppController {
   selectTab(tab: Tab): Tab {
     if (this.activeTab !== tab) {
       this.activeTab?.panes.forEach((pane) => pane.autoScroller.stop());
+      if (this.activeTab) this.readAloud.stop();
       for (const t of this.tabs) t.el.hidden = t !== tab;
       this.activeTab = tab;
       this.editing = null;
@@ -313,6 +343,7 @@ export class AppController {
     if (!tab) return;
     const index = this.tabs.indexOf(tab);
     this.tabs.splice(index, 1);
+    if (this.readAloud.pane && tab.panes.includes(this.readAloud.pane)) this.readAloud.stop();
     // Switch away first so no command can reach the tab while it shuts down.
     if (this.activeTab === tab) {
       this.activeTab = null;
@@ -330,10 +361,50 @@ export class AppController {
       t.el.hidden = true;
       t.panes.forEach((pane) => pane.autoScroller.stop());
     }
+    if (this.readAloud.status !== 'idle') this.readAloud.stop();
     this.activeTab = null;
     this.editing = null;
     this.libraryVersion++;
     this.notify();
+  }
+
+  // ---- Focus mode and hiding the bars -----------------------------------------------
+
+  setFocus(on: boolean): void {
+    this.focus = on;
+    this.#barsHidden = on;
+    clearTimeout(this.#fadeTimer);
+    this.notify();
+  }
+
+  /** A tap on the page shows or hides the bars. In focus mode, shown bars fade again by themselves. */
+  tapPage(): void {
+    this.#barsHidden = !this.#barsHidden;
+    if (this.focus && !this.#barsHidden) this.#scheduleFade();
+    this.notify();
+  }
+
+  /** Brings the bars back (mouse at the window edge in focus mode). */
+  revealBars(): void {
+    if (!this.#barsHidden) return this.keepBars();
+    this.#barsHidden = false;
+    if (this.focus) this.#scheduleFade();
+    this.notify();
+  }
+
+  /** The reader is using the bars: in focus mode, keep them a while longer. */
+  keepBars(): void {
+    if (this.focus && !this.#barsHidden) this.#scheduleFade();
+  }
+
+  #scheduleFade(): void {
+    clearTimeout(this.#fadeTimer);
+    this.#fadeTimer = setTimeout(() => {
+      // Never pull the bars away from under an open menu or dialog.
+      if (document.querySelector('[data-radix-popper-content-wrapper], [role="dialog"]')) return this.#scheduleFade();
+      this.#barsHidden = true;
+      this.notify();
+    }, FOCUS_FADE_MS);
   }
 
   async removeFromLibrary(bookId: string): Promise<void> {

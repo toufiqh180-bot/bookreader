@@ -5,6 +5,7 @@
 import { Emitter, debounce } from '../lib/util.ts';
 import { DEFAULT_REFLOW_SETTINGS, type ReflowSettings } from '../engine/reflow-view.ts';
 import type { PageTransition } from '../engine/layouts/page-turn.ts';
+import type { SpeechEngineId } from '../services/speech/engine.ts';
 import type { Platform } from '../platform/platform.ts';
 
 /** Light or dark app interface; 'system' follows the device setting. Pages are themed separately. */
@@ -23,6 +24,11 @@ export interface PreferenceValues {
   sidebarOpen: boolean;
   sidebarPanel: string;
   sidebarWidth: number;
+  /** Read-aloud voice engine; null picks device voices where they exist. */
+  speechEngine: SpeechEngineId | null;
+  /** Chosen voice per engine. */
+  speechVoices: Partial<Record<SpeechEngineId, string>>;
+  speechRate: number;
 }
 
 export const DEFAULT_PREFERENCES: PreferenceValues = {
@@ -37,6 +43,9 @@ export const DEFAULT_PREFERENCES: PreferenceValues = {
   sidebarOpen: false,
   sidebarPanel: 'outline',
   sidebarWidth: 320,
+  speechEngine: null,
+  speechVoices: {},
+  speechRate: 1,
 };
 
 export class Preferences extends Emitter<{ change: [] }> {

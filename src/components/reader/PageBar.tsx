@@ -1,6 +1,6 @@
 /**
  * Floating controls over the document: the page pill (history, page number,
- * zoom, fit), the auto-scroll pill while it runs, and a hairline
+ * zoom, fit), the read-aloud and auto-scroll pills while they run, and a hairline
  * reading-progress bar along the top edge.
  */
 import { useState } from 'react';
@@ -11,10 +11,10 @@ import { cn } from '@/lib/cn';
 import { IconButton } from '../common/IconButton.tsx';
 import { useAppState, useCommand } from '../../hooks/use-app.ts';
 import { MAX_SPEED, MIN_SPEED } from '../../engine/auto-scroller.ts';
+import { pill } from './pill.ts';
+import { ReadAloudBar } from './ReadAloudBar.tsx';
 
 const ZOOM_PRESETS = [50, 75, 100, 125, 150, 200, 300];
-const pill =
-  'pointer-events-auto flex h-11 items-center gap-0.5 rounded-full border bg-popover/90 px-1.5 shadow-floating backdrop-blur-xl backdrop-saturate-150';
 
 export function PageBar() {
   const state = useAppState();
@@ -33,7 +33,11 @@ export function PageBar() {
         <div className="h-full rounded-r-full bg-primary transition-[width] duration-300" style={{ width: `${fraction * 100}%` }} />
       </div>
 
-      <div className="absolute bottom-[calc(20px+env(safe-area-inset-bottom))] left-1/2 flex -translate-x-1/2 flex-col items-center gap-2.5">
+      <div
+        data-chrome="float"
+        className="absolute bottom-[calc(20px+env(safe-area-inset-bottom))] left-1/2 flex -translate-x-1/2 flex-col items-center gap-2.5"
+      >
+        <ReadAloudBar />
         {autoScroll.active && (
           <div className={pill}>
             <span className="px-2 font-medium">Auto-scroll</span>

@@ -65,19 +65,24 @@ export function pageTextFromOcr(ocr: OcrPage): PageText {
   return { str, runs, hasText: runs.length > 0 };
 }
 
+/** Width of a string in any consistent unit, for placing characters within a run. */
+export type MeasureText = (str: string) => number;
+
 /**
  * PDF-space rectangles covering characters [start, end) of `text.str`.
- * Positions inside a run are interpolated linearly — exact for monospaced
- * text, close enough for search highlights otherwise. Rotated text is skipped.
+ * Positions inside a run are interpolated: by character count (exact for
+ * monospaced text), or by `measure` when given, which follows proportional
+ * fonts much more closely. Rotated text is skipped.
  */
-export function rectsForRange(text: PageText, start: number, end: number): PdfRect[] {
+export function rectsForRange(text: PageText, start: number, end: number, measure?: MeasureText): PdfRect[] {
   const rects: PdfRect[] = [];
   for (const run of text.runs) {
     const from = Math.max(start, run.start);
     const to = Math.min(end, run.start + run.str.length);
     if (from >= to || !run.str.length) continue;
-    const f0 = (from - run.start) / run.str.length;
-    const f1 = (to - run.start) / run.str.length;
+    const total = measure?.(run.str) || 0;
+    const f0 = total ? measure!(run.str.slice(0, from - run.start)) / total : (from - run.start) / run.str.length;
+    const f1 = total ? measure!(run.str.slice(0, to - run.start)) / total : (to - run.start) / run.str.length;
     if (run.word) {
       const { x1, x2, y1, y2 } = run.word;
       rects.push({ x1: x1 + (x2 - x1) * f0, x2: x1 + (x2 - x1) * f1, y1, y2 });
